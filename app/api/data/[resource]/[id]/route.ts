@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { all, find, patch, remove } from "@/lib/server/db";
 import { getSession, logActivity, syncProfileAuth } from "@/lib/server/auth";
-import { ADMIN_ONLY_RESOURCES, canAccessDivision, isResource, RESOURCE_TABLE } from "@/lib/server/access";
+import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, canAccessDivision, isResource, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { Profile } from "@/lib/types";
 

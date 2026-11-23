@@ -1,5 +1,4 @@
 .data/
 .env*
 !.env.example
-data/seed.json
 data/*.xlsx

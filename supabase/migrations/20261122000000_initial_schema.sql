@@ -204,3 +204,10 @@ alter table public.activity_logs enable row level security;
 alter table public.backups enable row level security;
 alter table public.import_batches enable row level security;
 alter table public.import_rows enable row level security;
+
+grant usage on schema public to service_role, anon, authenticated;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+grant select on all tables in schema public to anon, authenticated;
+alter default privileges in schema public grant all on tables to service_role;
+alter default privileges in schema public grant all on sequences to service_role;

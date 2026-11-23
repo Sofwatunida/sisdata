@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { all, insert, nextCode, uid } from "@/lib/server/db";
 import { can, getSession, logActivity } from "@/lib/server/auth";
-import { ADMIN_ONLY_RESOURCES, isResource, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
+import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, isResource, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { ActivityLog, Division, Personnel } from "@/lib/types";
 
@@ -13,7 +13,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ resource: s
     if (!session) throw new Error("UNAUTHORIZED");
     const { resource } = await ctx.params;
     if (!isResource(resource)) return fail("Resource tidak dikenal", 404);
-    if (ADMIN_ONLY_RESOURCES.includes(resource) && session.role !== "admin") throw new Error("FORBIDDEN");
+    if (ADMIN_ONLY_READ_RESOURCES.includes(resource) && session.role !== "admin") throw new Error("FORBIDDEN");
 
     let rows = await all<Record<string, unknown>>(RESOURCE_TABLE[resource]);
     const params = req.nextUrl.searchParams;
