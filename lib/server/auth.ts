@@ -33,6 +33,31 @@ export async function clearSessionCookie() {
   store.delete(COOKIE);
 }
 
+export function normalizeEmail(value: unknown): string {
+  return String(value ?? "").trim().toLowerCase();
+}
+
+export function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+export async function verifyProfilePassword(profile: Profile, password: string): Promise<boolean> {
+  if (!password) return false;
+  if (supabaseEnabled) {
+    const sb = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const { error } = await sb.auth.signInWithPassword({
+      email: normalizeEmail(profile.email) || `${profile.username}@pendataan.local`,
+      password,
+    });
+    return !error;
+  }
+  return Boolean(profile.password_hash && verifyPassword(password, profile.password_hash));
+}
+
 async function readToken(): Promise<(Session & { exp: number }) | null> {
   const store = await cookies();
   const token = store.get(COOKIE)?.value;
@@ -147,15 +172,18 @@ export async function requireSession(): Promise<Session> {
   return session;
 }
 
-export async function createProfile(input: { username: string; password: string; full_name: string; role: "admin" | "operator" }) {
+export async function createProfile(input: { username: string; password: string; full_name: string; role: "admin" | "operator"; email?: string }) {
   const username = input.username.trim().toLowerCase();
+  const email = normalizeEmail(input.email) || `${username}@pendataan.local`;
+  if (!isValidEmail(email)) throw new Error("Email tidak valid");
   const existing = await all<Profile>("profiles");
   if (existing.some((p) => p.username.toLowerCase() === username)) throw new Error("Username sudah digunakan");
+  if (existing.some((p) => normalizeEmail(p.email) === email)) throw new Error("Email sudah digunakan");
   const id = uid();
   const profile: Profile = {
     id,
     username,
-    email: supabaseEnabled ? `${username}@pendataan.local` : "",
+    email,
     full_name: input.full_name.trim() || username,
     role: input.role,
     is_active: true,
@@ -182,13 +210,14 @@ export async function createProfile(input: { username: string; password: string;
   return profile;
 }
 
-export async function syncProfileAuth(id: string, input: { username?: string; full_name?: string }) {
+export async function syncProfileAuth(id: string, input: { username?: string; email?: string; full_name?: string }) {
   if (!supabaseEnabled) return;
   const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const payload: { email?: string; user_metadata?: Record<string, string> } = {};
-  if (input.username) payload.email = `${input.username.trim().toLowerCase()}@pendataan.local`;
+  if (input.email) payload.email = normalizeEmail(input.email);
+  else if (input.username) payload.email = `${input.username.trim().toLowerCase()}@pendataan.local`;
   if (input.full_name) payload.user_metadata = { full_name: input.full_name.trim() };
   if (!Object.keys(payload).length) return;
   const { error } = await sb.auth.admin.updateUserById(id, payload);
@@ -226,8 +255,8 @@ export async function logActivity(input: {
     action: input.action,
     entity_type: input.entity_type,
     entity_id: input.entity_id || "",
-    period_id: input.period_id || "",
-    division_id: input.division_id || "",
+    period_id: input.period_id || null,
+    division_id: input.division_id || null,
     before_data: input.before_data ?? null,
     after_data: input.after_data ?? null,
     description: input.description,

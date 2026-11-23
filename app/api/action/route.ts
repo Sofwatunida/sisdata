@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { all, bulkInsert, find, insert, nextCode, patch, remove, restoreSnapshot, snapshot, supabaseEnabled, uid, verifyPassword } from "@/lib/server/db";
-import { can, getSession, logActivity, createProfile, updateProfilePassword } from "@/lib/server/auth";
+import { all, bulkInsert, find, insert, nextCode, patch, remove, restoreSnapshot, snapshot, supabaseEnabled, uid } from "@/lib/server/db";
+import { can, getSession, logActivity, createProfile, updateProfilePassword, verifyProfilePassword } from "@/lib/server/auth";
 import { canAccessDivision } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { Assignment, Division, ImportBatch, Personnel, Period, Profile } from "@/lib/types";
@@ -181,6 +181,7 @@ export async function POST(req: NextRequest) {
         password: String(p.password || ""),
         full_name: String(p.full_name || ""),
         role: p.role === "admin" ? "admin" : "operator",
+        email: String(p.email || ""),
       });
       await logActivity({ actor: session, action: "tambah_akun", entity_type: "profiles", entity_id: profile.id, description: `Membuat akun ${profile.username}` });
       return ok({ data: { ...profile, password_hash: undefined } });
@@ -193,7 +194,7 @@ export async function POST(req: NextRequest) {
       if (newPassword.length < 6) return fail("Password minimal 6 karakter");
       if (session.role !== "admin" || id === session.userId) {
         const profile = (await all<Profile>("profiles")).find((x) => x.id === id);
-        if (!profile?.password_hash || !verifyPassword(String(p.current_password || ""), profile.password_hash)) {
+        if (!profile || !(await verifyProfilePassword(profile, String(p.current_password || "")))) {
           return fail("Password lama tidak sesuai");
         }
       }

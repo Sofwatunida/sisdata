@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { all, find, patch, remove } from "@/lib/server/db";
-import { getSession, logActivity, syncProfileAuth } from "@/lib/server/auth";
+import { getSession, isValidEmail, logActivity, normalizeEmail, syncProfileAuth } from "@/lib/server/auth";
 import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, canAccessDivision, isResource, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { Profile } from "@/lib/types";
@@ -15,7 +15,7 @@ export async function GET(_req: NextRequest, ctx: Ctx) {
     if (!session) throw new Error("UNAUTHORIZED");
     const { resource, id } = await ctx.params;
     if (!isResource(resource)) return fail("Resource tidak dikenal", 404);
-    if (ADMIN_ONLY_RESOURCES.includes(resource) && session.role !== "admin") throw new Error("FORBIDDEN");
+    if (ADMIN_ONLY_READ_RESOURCES.includes(resource) && session.role !== "admin") throw new Error("FORBIDDEN");
     const row = await find(RESOURCE_TABLE[resource], id);
     if (!row) return fail("Data tidak ditemukan", 404);
     return ok({ data: row });
@@ -41,13 +41,25 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
       const current = before as unknown as Profile;
       const nextUsername = String(changes.username ?? current.username).trim().toLowerCase();
       if (!nextUsername) return fail("Username wajib diisi");
-      if (nextUsername !== current.username) {
-        const profiles = await all<Profile>("profiles");
-        if (profiles.some((p) => p.id !== id && p.username.toLowerCase() === nextUsername)) return fail("Username sudah digunakan", 409);
-        changes.username = nextUsername;
-        await syncProfileAuth(id, { username: nextUsername });
+      const profiles = await all<Profile>("profiles");
+      const usernameChanged = nextUsername !== current.username;
+      if (usernameChanged && profiles.some((p) => p.id !== id && p.username.toLowerCase() === nextUsername)) return fail("Username sudah digunakan", 409);
+      if (usernameChanged) changes.username = nextUsername;
+
+      const emailChanged = changes.email !== undefined;
+      let nextEmail = normalizeEmail(changes.email ?? current.email);
+      if (!nextEmail && usernameChanged) nextEmail = `${nextUsername}@pendataan.local`;
+      if (emailChanged || (!current.email && usernameChanged)) {
+        if (!isValidEmail(nextEmail)) return fail("Email tidak valid", 400);
+        if (profiles.some((p) => p.id !== id && normalizeEmail(p.email) === nextEmail)) return fail("Email sudah digunakan", 409);
+        changes.email = nextEmail;
       }
-      if (changes.full_name) await syncProfileAuth(id, { full_name: String(changes.full_name) });
+
+      await syncProfileAuth(id, {
+        username: usernameChanged ? nextUsername : undefined,
+        email: nextEmail || undefined,
+        full_name: changes.full_name ? String(changes.full_name) : undefined,
+      });
     }
 
     const divisionId = String(changes.division_id || (before as { division_id?: string }).division_id || (resource === "divisions" ? id : ""));

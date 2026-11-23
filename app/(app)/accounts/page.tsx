@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { KeyRound, Pencil, Plus, ShieldCheck, UserCog } from "lucide-react";
+import { KeyRound, Mail, Pencil, Plus, ShieldCheck, UserCog } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api, patch, post } from "@/lib/client/api";
 import { Badge, EmptyState, Field, Loading, Modal, PageHeader, confirmDialog, toast } from "@/components/ui";
@@ -21,7 +21,7 @@ export default function AccountsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [permOpen, setPermOpen] = useState<Profile | null>(null);
   const [passOpen, setPassOpen] = useState<Profile | null>(null);
-  const [newAccount, setNewAccount] = useState({ username: "", full_name: "", password: "", role: "operator" });
+  const [newAccount, setNewAccount] = useState({ username: "", email: "", full_name: "", password: "", role: "operator" });
   const [scope, setScope] = useState<Record<string, unknown>>({ division_id: "", period_id: "" });
   const [passwords, setPasswords] = useState({ current_password: "", password: "" });
 
@@ -39,7 +39,7 @@ export default function AccountsPage() {
   useEffect(() => { void load(); }, []);
 
   async function createAccount() {
-    try { await post("/api/action", { action: "create_account", payload: newAccount }); toast("Akun berhasil dibuat"); setCreateOpen(false); setNewAccount({ username: "", full_name: "", password: "", role: "operator" }); await load(); }
+    try { await post("/api/action", { action: "create_account", payload: newAccount }); toast("Akun berhasil dibuat"); setCreateOpen(false); setNewAccount({ username: "", email: "", full_name: "", password: "", role: "operator" }); await load(); }
     catch (e) { toast((e as Error).message, "error"); }
   }
 
@@ -69,12 +69,13 @@ export default function AccountsPage() {
       {loading ? <Loading /> : (
         <div className="card overflow-hidden">
           <div className="table-wrap"><table className="table">
-            <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Status</th><th>Cakupan Akses</th><th className="text-right">Aksi</th></tr></thead>
+            <thead><tr><th>Username</th><th>Email</th><th>Nama</th><th>Role</th><th>Status</th><th>Cakupan Akses</th><th className="text-right">Aksi</th></tr></thead>
             <tbody>
               {profiles.map((p) => {
                 const perms = permissions.filter((x) => x.profile_id === p.id);
                 return <tr key={p.id}>
                   <td className="font-mono text-xs text-slate-600">@{p.username}</td>
+                  <td className="text-xs text-slate-500">{p.email || "-"}</td>
                   <td className="font-semibold">{p.full_name}</td>
                   <td><Badge status={p.role}>{p.role}</Badge></td>
                   <td><Badge status={p.is_active ? "aktif" : "nonaktif"} /></td>
@@ -83,8 +84,13 @@ export default function AccountsPage() {
                     <button className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Ubah username" onClick={async () => {
                       const username = window.prompt("Username baru", p.username);
                       if (!username || username === p.username) return;
-                      try { await patch(`/api/data/profiles/${p.id}`, { username }); toast("Username diperbarui"); await load(); } catch (e) { toast((e as Error).message, "error"); }
+                      try { await patch(`/api/data/profiles/${p.id}`, { username, email: p.email }); toast("Username diperbarui"); await load(); } catch (e) { toast((e as Error).message, "error"); }
                     }}><Pencil className="h-4 w-4" /></button>
+                    <button className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Ubah email" onClick={async () => {
+                      const email = window.prompt("Email baru (boleh gmail)", p.email || `${p.username}@pendataan.local`);
+                      if (!email || email === p.email) return;
+                      try { await patch(`/api/data/profiles/${p.id}`, { email }); toast("Email diperbarui"); await load(); } catch (e) { toast((e as Error).message, "error"); }
+                    }}><Mail className="h-4 w-4" /></button>
                     {p.role === "operator" && <button className="rounded p-1.5 text-navy-700 hover:bg-navy-50" title="Hak akses" onClick={() => { setPermOpen(p); setScope({ division_id: perms[0]?.division_id || "", period_id: perms[0]?.period_id || "", ...(perms[0] || {}) }); }}><ShieldCheck className="h-4 w-4" /></button>}
                     <button className="rounded p-1.5 text-slate-500 hover:bg-slate-100" title="Ganti password" onClick={() => setPassOpen(p)}><KeyRound className="h-4 w-4" /></button>
                     {p.username !== "admin" && <button className="text-xs font-medium text-rose-600 hover:underline" onClick={async () => { if (await confirmDialog(`${p.is_active ? "Nonaktifkan" : "Aktifkan"} akun ${p.username}?`)) await toggleActive(p); }}>{p.is_active ? "Nonaktifkan" : "Aktifkan"}</button>}
@@ -99,6 +105,7 @@ export default function AccountsPage() {
       <Modal open={createOpen} onClose={() => setCreateOpen(false)} title="Buat Akun Baru" size="sm">
         <div className="space-y-3">
           <Field label="Username *"><input className="input" value={newAccount.username} onChange={(e) => setNewAccount({ ...newAccount, username: e.target.value })} /></Field>
+          <Field label="Email (kosongkan untuk otomatis)"><input className="input" type="email" value={newAccount.email} onChange={(e) => setNewAccount({ ...newAccount, email: e.target.value })} /></Field>
           <Field label="Nama lengkap"><input className="input" value={newAccount.full_name} onChange={(e) => setNewAccount({ ...newAccount, full_name: e.target.value })} /></Field>
           <Field label="Password * (min. 6 karakter)"><input className="input" type="password" value={newAccount.password} onChange={(e) => setNewAccount({ ...newAccount, password: e.target.value })} /></Field>
           <Field label="Role"><select className="input" value={newAccount.role} onChange={(e) => setNewAccount({ ...newAccount, role: e.target.value })}><option value="operator">Operator</option><option value="admin">Admin</option></select></Field>

@@ -72,9 +72,6 @@ export default function LoginPage() {
             </label>
             <button className="btn-primary w-full" disabled={loading}>{loading ? "Memeriksa..." : "Masuk"}</button>
           </form>
-          <div className="mt-6 rounded-lg bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-500">
-            <strong>Akun awal (mode lokal):</strong> admin / W^%HNK9JJmZ@TK5KW15yr2Ia 
-          </div>
         </div>
       </div>
     </div>
