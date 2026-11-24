@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Eye, Filter, Pencil, Plus, SlidersHorizontal, Trash2, Users, X } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api, del, patch, post } from "@/lib/client/api";
-import { Badge, EmptyState, Loading, Modal, PageHeader, Pagination, SearchBox, confirmDialog, toast, useDebounce } from "@/components/ui";
+import { Badge, EmptyState, Loading, Modal, PageHeader, Pagination, SearchBox, confirmDialog, confirmTyped, toast, useDebounce } from "@/components/ui";
 import { PersonnelForm } from "@/components/PersonnelForm";
 import { formatNumber } from "@/lib/utils";
 import type { Assignment, Division, Personnel } from "@/lib/types";
@@ -13,7 +13,7 @@ import type { Assignment, Division, Personnel } from "@/lib/types";
 const PER_PAGE = 15;
 
 export default function PersonnelPage() {
-  const { divisions, activePeriodId, refresh } = useApp();
+  const { user, divisions, activePeriodId, refresh } = useApp();
   const [rows, setRows] = useState<Personnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,6 +90,24 @@ export default function PersonnelPage() {
     catch (e) { toast((e as Error).message, "error"); }
   }
 
+  async function deleteAllPersonnel() {
+    const agreed = await confirmTyped(
+      "Hapus semua personil?",
+      "Seluruh personil dan penugasan akan dihapus permanen. Backup otomatis dibuat sebelum penghapusan; data dapat dipulihkan lewat halaman Import & Export.",
+      "HAPUS",
+    );
+    if (!agreed) return;
+    try {
+      const result = await post<{ data: { deleted: number; assignments: number; backup_id: string } }>("/api/action", {
+        action: "delete_all_personnel",
+        payload: { confirm: true },
+      });
+      toast(`${result.data.deleted} personil dihapus · backup dibuat`);
+      setSelected(new Set()); setEditing(null); setFormOpen(false);
+      await load(); await refresh();
+    } catch (e) { toast((e as Error).message, "error"); }
+  }
+
   async function bulkStatus(value: "aktif" | "nonaktif") {
     if (!(await confirmDialog(`Ubah status ${selected.size} personil menjadi ${value}?`))) return;
     try {
@@ -114,7 +132,7 @@ export default function PersonnelPage() {
   return (
     <div>
       <PageHeader title="Data Personil" description={`${formatNumber(rows.length)} personil terdaftar · ${formatNumber(filtered.length)} sesuai filter`}
-        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=personnel&format=xlsx&period_id=${activePeriodId}`}>Export XLSX</button><button className="btn-primary" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4" /> Tambah Personil</button></>} />
+        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=personnel&format=xlsx&period_id=${activePeriodId}`}>Export XLSX</button>{user?.role === "admin" && <button className="btn-danger" onClick={() => void deleteAllPersonnel()}><Trash2 className="h-4 w-4" /> Hapus Semua</button>}<button className="btn-primary" onClick={() => { setEditing(null); setFormOpen(true); }}><Plus className="h-4 w-4" /> Tambah Personil</button></>} />
 
       <div className="card overflow-hidden">
         <div className="border-b border-slate-100 p-4">

@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { all, bulkInsert, find, insert, nextCode, patch, remove, restoreSnapshot, snapshot, supabaseEnabled, uid } from "@/lib/server/db";
+import { all, bulkInsert, find, insert, nextCode, patch, remove, removeAll, restoreSnapshot, snapshot, supabaseEnabled, uid } from "@/lib/server/db";
 import { can, getSession, logActivity, createProfile, updateProfilePassword, verifyProfilePassword } from "@/lib/server/auth";
 import { canAccessDivision } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
@@ -160,6 +160,37 @@ export async function POST(req: NextRequest) {
       await restoreSnapshot(backup.snapshot);
       await logActivity({ actor: session, action: "pulihkan", entity_type: "backups", entity_id: String(p.backup_id), description: "Memulihkan data dari backup", before_data: before });
       return ok({ data: { success: true } });
+    }
+
+    if (action === "delete_all_personnel") {
+      if (session.role !== "admin") throw new Error("FORBIDDEN");
+      if (p.confirm !== true) return fail("Konfirmasi penghapusan diperlukan");
+      const [people, assignmentRows] = await Promise.all([
+        all<Personnel>("personnel"),
+        all<Assignment>("assignments"),
+      ]);
+      const snap = await snapshot();
+      const backup = await insert("backups", {
+        id: uid(),
+        file_name: `auto-reset-personil-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+        created_by: session.fullName,
+        size: JSON.stringify(snap).length,
+        summary: { auto: 1, personnel: people.length, assignments: assignmentRows.length },
+        created_at: new Date().toISOString(),
+        snapshot: snap,
+      });
+      const deletedAssignments = await removeAll("assignments");
+      const deletedPersonnel = await removeAll("personnel");
+      await logActivity({
+        actor: session,
+        action: "hapus_semua_personil",
+        entity_type: "personnel",
+        entity_id: "all",
+        description: `Menghapus ${deletedPersonnel} personil dan ${deletedAssignments} penugasan. Backup otomatis: ${String(backup.id)}`,
+        before_data: { personnel: people.length, assignments: assignmentRows.length, backup_id: String(backup.id) },
+        after_data: { personnel: 0, assignments: 0 },
+      });
+      return ok({ data: { deleted: deletedPersonnel, assignments: deletedAssignments, backup_id: String(backup.id) } });
     }
 
     if (action === "rollback_import") {

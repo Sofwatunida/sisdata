@@ -26,6 +26,24 @@ export async function confirmDialog(title: string, text?: string, confirmText = 
   return result.isConfirmed;
 }
 
+export async function confirmTyped(title: string, text: string, expected: string) {
+  const result = await Swal.fire({
+    title,
+    text,
+    icon: "warning",
+    input: "text",
+    inputPlaceholder: `Ketik ${expected} untuk melanjutkan`,
+    showCancelButton: true,
+    confirmButtonColor: "#e11d48",
+    cancelButtonColor: "#94a3b8",
+    confirmButtonText: "Hapus permanen",
+    cancelButtonText: "Batal",
+    customClass: { popup: "!rounded-xl" },
+    inputValidator: (value) => (String(value || "").trim().toUpperCase() === expected ? undefined : `Ketik ${expected} untuk melanjutkan`),
+  });
+  return result.isConfirmed && String(result.value || "").trim().toUpperCase() === expected;
+}
+
 export function PageHeader({ title, description, actions }: { title: string; description?: string; actions?: React.ReactNode }) {
   return (
     <div className="mb-5 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">

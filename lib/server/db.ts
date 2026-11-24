@@ -174,6 +174,23 @@ export async function remove(table: TableName, id: string): Promise<boolean> {
   return true;
 }
 
+export async function removeAll(table: TableName): Promise<number> {
+  if (supabaseEnabled) {
+    const { count, error } = await supabase().from(table).select("id", { count: "exact", head: true });
+    if (error) throw new Error(error.message);
+    if (!count) return 0;
+    const { error: deleteError } = await supabase().from(table).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (deleteError) throw new Error(deleteError.message);
+    return count;
+  }
+  const db = local();
+  const list = (db[table] as unknown[]) || [];
+  const count = list.length;
+  (db[table] as unknown[]) = [];
+  persist();
+  return count;
+}
+
 export async function removeWhere(table: TableName, predicate: (row: Record<string, unknown>) => boolean): Promise<number> {
   if (supabaseEnabled) throw new Error("removeWhere tidak didukung pada mode Supabase");
   const db = local();
