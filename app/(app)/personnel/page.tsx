@@ -231,7 +231,7 @@ export default function PersonnelPage() {
         )}
       </div>
 
-      <PersonnelForm open={formOpen} onClose={() => setFormOpen(false)} initial={editing} defaultDivisionId="" defaultPeriodId={activePeriodId} onSaved={async () => { await load(); await refresh(); }} />
+      <PersonnelForm open={formOpen} onClose={() => setFormOpen(false)} initial={editing} defaultDivisionId="" defaultPeriodId={activePeriodId} onSaved={async () => { await load(); await refresh(); }} onDivisionsChanged={refresh} />
 
       <Modal
         open={filterOpen} onClose={() => setFilterOpen(false)} title="Filter & Urutkan" size="sm"

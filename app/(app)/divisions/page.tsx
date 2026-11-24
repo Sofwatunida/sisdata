@@ -48,13 +48,13 @@ export default function DivisionsPage() {
     if (!String(form.name || "").trim()) { toast("Nama bagian wajib diisi", "error"); return; }
     try {
       if (editing) await patch(`/api/data/divisions/${editing.id}`, form);
-      else await post("/api/data/divisions", { ...form, code: form.code || `DIV-${String(divisions.length + 1).padStart(3, "0")}` });
+      else await post("/api/data/divisions", { ...form, code: String(form.code || "").trim() || undefined });
       toast(editing ? "Bagian diperbarui" : "Bagian ditambahkan"); setOpen(false); await load(); await refresh();
     } catch (e) { toast((e as Error).message, "error"); }
   }
 
   async function remove(d: Division) {
-    if (!(await confirmDialog(`Hapus bagian "${d.name}"?`, "Bagian hanya bisa dihapus jika tidak memiliki personil aktif.", "Hapus"))) return;
+    if (!(await confirmDialog(`Hapus bagian "${d.name}"?`, "Bagian hanya bisa dihapus jika belum memiliki riwayat penugasan. Gunakan status Nonaktif jika sudah tidak dipakai.", "Hapus"))) return;
     try { await del(`/api/data/divisions/${d.id}`); toast("Bagian dihapus"); await load(); await refresh(); }
     catch (e) { toast((e as Error).message, "error"); }
   }
@@ -136,6 +136,11 @@ export default function DivisionsPage() {
           <Field label="Ketua / koordinator"><input className="input" list="master-coords" value={String(form.coordinator_name || "")} onChange={(e) => setForm({ ...form, coordinator_name: e.target.value })} /><datalist id="master-coords">{master.filter((m) => m.type === "koordinator").map((m) => <option key={m.id} value={m.value} />)}</datalist></Field>
           <Field label="Kategori"><input className="input" list="master-cats" value={String(form.category || "")} onChange={(e) => setForm({ ...form, category: e.target.value })} /><datalist id="master-cats">{master.filter((m) => m.type === "kategori_divisi").map((m) => <option key={m.id} value={m.value} />)}</datalist></Field>
           <Field label="Kebutuhan personil"><input className="input" type="number" inputMode="numeric" min="0" value={Number(form.required_count) || 0} onChange={(e) => setForm({ ...form, required_count: Number(e.target.value) })} /></Field>
+          <Field label="Status bagian">
+            <select className="input" value={String(form.is_active !== false)} onChange={(e) => setForm({ ...form, is_active: e.target.value === "true" })}>
+              <option value="true">Aktif</option><option value="false">Nonaktif</option>
+            </select>
+          </Field>
           <div className="sm:col-span-2"><Field label="Keterangan"><textarea className="input" value={String(form.notes || "")} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field></div>
         </div>
         <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void save()}>Simpan</button></div>

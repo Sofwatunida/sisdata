@@ -3,7 +3,8 @@ import { all, find, patch, remove } from "@/lib/server/db";
 import { getSession, isValidEmail, logActivity, normalizeEmail, syncProfileAuth } from "@/lib/server/auth";
 import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, canAccessDivision, isResource, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
-import type { Profile } from "@/lib/types";
+import type { Division, Profile } from "@/lib/types";
+import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -66,6 +67,36 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (resource === "personnel" || resource === "assignments" || resource === "divisions") {
       if (!(await canAccessDivision(session, divisionId, "edit"))) throw new Error("FORBIDDEN");
     }
+    if (resource === "divisions") {
+      const nextName = changes.name !== undefined
+        ? normalizeDivisionName(String(changes.name))
+        : normalizeDivisionName(String((before as { name?: string }).name || ""));
+      if (!nextName) return fail("Nama bagian wajib diisi");
+      if (changes.name !== undefined) changes.name = nextName;
+
+      const nextPeriodId = changes.period_id !== undefined
+        ? String(changes.period_id || "")
+        : String((before as { period_id?: string }).period_id || "");
+      if (changes.period_id !== undefined) {
+        if (nextPeriodId) changes.period_id = nextPeriodId;
+        else delete changes.period_id;
+      }
+
+      const divisions = await all<Division>("divisions");
+      if (divisions.some((d) => d.id !== id && String(d.period_id || "") === nextPeriodId && divisionNameKey(d.name) === divisionNameKey(nextName))) {
+        return fail(`Bagian "${nextName}" sudah terdaftar pada periode ini.`, 409);
+      }
+
+      if (changes.code !== undefined) {
+        const nextCode = normalizeDivisionName(String(changes.code));
+        if (!nextCode) return fail("Kode bagian wajib diisi");
+        if (divisions.some((d) => d.id !== id && String(d.code || "").trim().toLowerCase() === nextCode.toLowerCase())) {
+          return fail("Kode bagian sudah digunakan", 409);
+        }
+        changes.code = nextCode;
+      }
+      if (changes.required_count !== undefined) changes.required_count = Number(changes.required_count) || 0;
+    }
     if (resource === "personnel") {
       const name = String(changes.full_name ?? ((before as { full_name?: string }).full_name || "")).trim();
       if (!name) return fail("Nama personil wajib diisi");
@@ -111,9 +142,9 @@ export async function DELETE(_req: NextRequest, ctx: Ctx) {
     if (!before) return fail("Data tidak ditemukan", 404);
     const divisionId = String((before as { division_id?: string }).division_id || (resource === "divisions" ? id : ""));
     if (resource === "divisions") {
-      const assignments = await all<{ division_id: string; status: string }>("assignments");
-      if (assignments.some((a) => a.division_id === id && a.status === "aktif")) {
-        return fail("Bagian masih memiliki personil aktif. Pindahkan personil terlebih dahulu.", 409);
+      const assignments = await all<{ division_id: string }>("assignments");
+      if (assignments.some((a) => a.division_id === id)) {
+        return fail("Bagian memiliki riwayat penugasan. Jangan hapus bagian ini; gunakan status Nonaktif jika sudah tidak dipakai.", 409);
       }
     }
     if (resource === "personnel" || resource === "assignments" || resource === "divisions") {

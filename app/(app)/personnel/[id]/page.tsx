@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, Clock, GitMerge, MapPin, Pencil, Phone, Plus, UserRound } from "lucide-react";
 import { api, post } from "@/lib/client/api";
+import { useApp } from "@/components/AppContext";
 import { Badge, EmptyState, Field, Loading, Modal, PageHeader, confirmDialog, toast } from "@/components/ui";
 import { PersonnelForm } from "@/components/PersonnelForm";
 import { formatDate } from "@/lib/utils";
@@ -12,6 +13,7 @@ import type { Assignment, Division, Period, Personnel } from "@/lib/types";
 
 export default function PersonnelDetailPage() {
   const params = useParams<{ id: string }>();
+  const { activePeriodId, refresh } = useApp();
   const [person, setPerson] = useState<Personnel | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -162,7 +164,7 @@ export default function PersonnelDetailPage() {
         </div>
       </div>
 
-      <PersonnelForm open={editOpen} onClose={() => setEditOpen(false)} initial={person} onSaved={async () => { await load(); }} />
+      <PersonnelForm open={editOpen} onClose={() => setEditOpen(false)} initial={person} defaultPeriodId={activePeriodId} onSaved={async () => { await load(); await refresh(); }} onDivisionsChanged={refresh} />
 
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Tambah Penugasan" size="sm">
         <div className="space-y-3">

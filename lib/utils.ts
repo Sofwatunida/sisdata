@@ -37,6 +37,14 @@ export function dashboardNumbers(divisions: Division[], assignments: Assignment[
   };
 }
 
+export function normalizeDivisionName(value: string) {
+  return String(value || "").trim().replace(/\s+/g, " ");
+}
+
+export function divisionNameKey(value: string) {
+  return normalizeDivisionName(value).toLowerCase();
+}
+
 export const formatNumber = (n: number) => new Intl.NumberFormat("id-ID").format(n || 0);
 export const formatDate = (value?: string) => {
   if (!value) return "-";

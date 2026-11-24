@@ -4,6 +4,7 @@ import { can, getSession, logActivity } from "@/lib/server/auth";
 import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, isResource, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { ActivityLog, Division, Personnel } from "@/lib/types";
+import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,29 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
         return fail("DUPLICATE_WARNING: Personil dengan identitas serupa sudah terdaftar. Periksa sebelum menyimpan.", 409);
       }
     }
-    if (resource === "divisions") payload.required_count = Number(payload.required_count) || 0;
+    if (resource === "divisions") {
+      const name = normalizeDivisionName(String(payload.name || ""));
+      if (!name) return fail("Nama bagian wajib diisi");
+      payload.name = name;
+      if (payload.period_id) payload.period_id = String(payload.period_id);
+      else delete payload.period_id;
+      payload.is_active = payload.is_active !== false;
+      payload.required_count = Number(payload.required_count) || 0;
+
+      const divisions = await all<Division>("divisions");
+      const periodId = String(payload.period_id || "");
+      if (divisions.some((d) => String(d.period_id || "") === periodId && divisionNameKey(d.name) === divisionNameKey(name))) {
+        return fail(`Bagian "${name}" sudah terdaftar pada periode ini.`, 409);
+      }
+
+      const requestedCode = normalizeDivisionName(String(payload.code || ""));
+      const generatedCode = await nextCode("divisions", "DIV", 3);
+      payload.code = requestedCode || generatedCode;
+      if (divisions.some((d) => String(d.code || "").trim().toLowerCase() === String(payload.code).toLowerCase())) {
+        if (requestedCode) return fail(`Kode bagian "${payload.code}" sudah digunakan.`, 409);
+        payload.code = generatedCode;
+      }
+    }
     const created = await insert(RESOURCE_TABLE[resource], payload);
     await logActivity({
       actor: session,

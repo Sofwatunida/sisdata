@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api, post, patch } from "@/lib/client/api";
 import { Field, Modal, confirmDialog, toast } from "@/components/ui";
-import type { Division, MasterData, Personnel } from "@/lib/types";
+import type { Assignment, Division, MasterData, Personnel } from "@/lib/types";
+import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
 
 type Props = {
   open: boolean;
@@ -12,6 +13,7 @@ type Props = {
   defaultDivisionId?: string;
   defaultPeriodId?: string;
   onSaved?: (person: Personnel) => void;
+  onDivisionsChanged?: () => Promise<void> | void;
 };
 
 const empty = {
@@ -19,17 +21,28 @@ const empty = {
   phone: "", address: "", notes: "", status: "aktif", division_id: "", period_id: "", position_name: "Anggota",
 };
 
-export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", defaultPeriodId = "", onSaved }: Props) {
+export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", defaultPeriodId = "", onSaved, onDivisionsChanged }: Props) {
   const [form, setForm] = useState<Record<string, any>>({ ...empty });
-  const [divisions, setDivisions] = useState<Division[]>([]);
+  const [allDivisions, setAllDivisions] = useState<Division[]>([]);
   const [master, setMaster] = useState<MasterData[]>([]);
+  const [currentAssignment, setCurrentAssignment] = useState<Assignment | null>(null);
+  const [originalDivisionId, setOriginalDivisionId] = useState("");
+  const [assignmentLoading, setAssignmentLoading] = useState(false);
+  const [customOpen, setCustomOpen] = useState(false);
+  const [customName, setCustomName] = useState("");
+  const [divisionError, setDivisionError] = useState("");
+  const [creatingDivision, setCreatingDivision] = useState(false);
   const [saving, setSaving] = useState(false);
   const [repeat, setRepeat] = useState(false);
   const [nameError, setNameError] = useState(false);
 
   useEffect(() => {
+    if (!open) return;
+    setCustomOpen(false);
+    setCustomName("");
+    setDivisionError("");
     void api<{ data: MasterData[] }>("/api/data/master_data").then((r) => setMaster(r.data || [])).catch(() => undefined);
-    void api<{ data: Division[] }>("/api/data/divisions").then((r) => setDivisions(r.data || [])).catch(() => undefined);
+    void api<{ data: Division[] }>("/api/data/divisions").then((r) => setAllDivisions(r.data || [])).catch(() => undefined);
   }, [open]);
 
   useEffect(() => {
@@ -43,11 +56,122 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
     }
   }, [open, initial, defaultDivisionId, defaultPeriodId]);
 
+  useEffect(() => {
+    if (!open || !initial?.id) {
+      setCurrentAssignment(null);
+      setOriginalDivisionId("");
+      setAssignmentLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setAssignmentLoading(true);
+    void api<{ data: Assignment[] }>("/api/data/assignments")
+      .then((r) => {
+        if (cancelled) return;
+        const rows = r.data || [];
+        const active = rows.filter((a) => a.personnel_id === initial.id && a.status === "aktif");
+        const match = active.find((a) => a.period_id === defaultPeriodId) || active[0] || rows.find((a) => a.personnel_id === initial.id) || null;
+        const divisionId = match?.division_id || (initial as unknown as Record<string, string>).division_id || "";
+        setCurrentAssignment(match);
+        setOriginalDivisionId(divisionId);
+        setForm((f) => ({ ...f, division_id: divisionId, period_id: match?.period_id || f.period_id || defaultPeriodId }));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        const divisionId = (initial as unknown as Record<string, string>).division_id || "";
+        setOriginalDivisionId(divisionId);
+        setForm((f) => ({ ...f, division_id: divisionId }));
+      })
+      .finally(() => { if (!cancelled) setAssignmentLoading(false); });
+    return () => { cancelled = true; };
+  }, [open, initial, defaultPeriodId]);
+
+  const effectivePeriodId = currentAssignment?.period_id || defaultPeriodId || String(form.period_id || "");
+  const divisions = useMemo(() => {
+    if (!effectivePeriodId) return allDivisions;
+    return allDivisions.filter((d) => d.period_id === effectivePeriodId || d.id === originalDivisionId || d.id === form.division_id);
+  }, [allDivisions, effectivePeriodId, originalDivisionId, form.division_id]);
+
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
   const options = (type: string, fallback: string[] = []) => {
     const values = master.filter((m) => m.type === type && m.is_active).map((m) => m.value);
     return [...new Set([...values, ...fallback])];
   };
+
+  async function addDivision() {
+    const name = normalizeDivisionName(customName);
+    if (!name) {
+      setDivisionError("Nama bagian wajib diisi.");
+      toast("Nama bagian wajib diisi", "error");
+      return;
+    }
+    if (!effectivePeriodId) {
+      setDivisionError("Periode penugasan belum tersedia.");
+      toast("Periode penugasan belum tersedia", "error");
+      return;
+    }
+    if (divisions.some((d) => divisionNameKey(d.name) === divisionNameKey(name))) {
+      setDivisionError(`Bagian "${name}" sudah terdaftar.`);
+      toast(`Bagian "${name}" sudah terdaftar`, "error");
+      return;
+    }
+    setCreatingDivision(true);
+    try {
+      const created = (await post<{ data: Division }>("/api/data/divisions", {
+        period_id: effectivePeriodId,
+        name,
+        required_count: 0,
+        sort_order: divisions.length + 1,
+        is_active: true,
+      })).data;
+      setAllDivisions((prev) => [...prev, created]);
+      set("division_id", created.id);
+      setCustomOpen(false);
+      setCustomName("");
+      setDivisionError("");
+      await onDivisionsChanged?.();
+      toast("Bagian ditambahkan");
+    } catch (error) {
+      const message = (error as Error).message;
+      setDivisionError(message);
+      toast(message, "error");
+    } finally {
+      setCreatingDivision(false);
+    }
+  }
+
+  async function syncDivision(personnelId: string) {
+    const targetDivisionId = String(form.division_id || "");
+    if (currentAssignment?.division_id === targetDivisionId) return;
+    if (!targetDivisionId) {
+      if (currentAssignment) {
+        await post("/api/action", { action: "end_assignment", payload: { assignment_id: currentAssignment.id } });
+      }
+      return;
+    }
+    if (!effectivePeriodId) throw new Error("Periode penugasan belum tersedia");
+    if (currentAssignment) {
+      await post("/api/action", {
+        action: "move_personnel",
+        payload: {
+          assignment_id: currentAssignment.id,
+          division_id: targetDivisionId,
+          period_id: effectivePeriodId,
+          position_name: form.position_name || currentAssignment.position_name || "Anggota",
+        },
+      });
+      return;
+    }
+    await post("/api/action", {
+      action: "assign_personnel",
+      payload: {
+        personnel_id: personnelId,
+        division_id: targetDivisionId,
+        period_id: effectivePeriodId,
+        position_name: form.position_name || "Anggota",
+      },
+    });
+  }
 
   async function save(force = false) {
     if (!form.full_name.trim()) { setNameError(true); toast("Nama wajib diisi", "error"); return; }
@@ -59,10 +183,14 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
       const suffix = force ? "?force=1" : "";
       if (initial?.id) {
         saved = (await patch<{ data: Personnel }>(`/api/data/personnel/${initial.id}${suffix}`, personFields)).data;
+        await syncDivision(saved.id);
       } else {
         saved = (await post<{ data: Personnel }>(`/api/data/personnel${suffix}`, personFields)).data;
         if (division_id) {
-          await post("/api/action", { action: "assign_personnel", payload: { personnel_id: saved.id, division_id, period_id, position_name } });
+          await post("/api/action", {
+            action: "assign_personnel",
+            payload: { personnel_id: saved.id, division_id, period_id: period_id || effectivePeriodId, position_name },
+          });
         }
       }
       onSaved?.(saved);
@@ -150,26 +278,59 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
         <section>
           <h3 className={sectionTitle}><span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy-100 text-[11px]">3</span> Informasi Penugasan</h3>
           <div className={sectionGrid}>
+            <Field label="Bagian / divisi">
+              <select
+                className="input"
+                value={form.division_id}
+                disabled={assignmentLoading}
+                onChange={(e) => {
+                  if (e.target.value === "__new__") {
+                    setCustomOpen(true);
+                    setDivisionError("");
+                    set("division_id", "");
+                  } else {
+                    setCustomOpen(false);
+                    setDivisionError("");
+                    set("division_id", e.target.value);
+                  }
+                }}
+              >
+                <option value="">Belum ditempatkan</option>
+                {divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                <option value="__new__">+ Tambah bagian baru...</option>
+              </select>
+              {assignmentLoading && <span className="mt-1 block text-[11px] text-slate-400">Memuat bagian saat ini...</span>}
+            </Field>
             {!initial && (
-              <>
-                <Field label="Bagian / divisi">
-                  <select className="input" value={form.division_id} onChange={(e) => set("division_id", e.target.value)}>
-                    <option value="">Belum ditempatkan</option>
-                    {divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                  </select>
-                </Field>
-                <Field label="Jabatan">
-                  <input className="input" list="opt-position" value={form.position_name} onChange={(e) => set("position_name", e.target.value)} />
-                  <datalist id="opt-position">{options("jabatan", ["Anggota"]).map((v) => <option key={v} value={v} />)}</datalist>
-                </Field>
-              </>
+              <Field label="Jabatan">
+                <input className="input" list="opt-position" value={form.position_name} onChange={(e) => set("position_name", e.target.value)} />
+                <datalist id="opt-position">{options("jabatan", ["Anggota"]).map((v) => <option key={v} value={v} />)}</datalist>
+              </Field>
             )}
-            {initial && <p className="text-xs text-slate-500 sm:col-span-2">Perpindahan bagian dan jabatan diatur melalui riwayat penugasan di halaman detail personil.</p>}
+            {customOpen && (
+              <div className="sm:col-span-2 rounded-lg border border-navy-100 bg-navy-50/50 p-3">
+                <span className="label">Nama bagian baru</span>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    className="input flex-1"
+                    value={customName}
+                    onChange={(e) => { setCustomName(e.target.value); setDivisionError(""); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void addDivision(); } }}
+                    placeholder="Contoh: Susuguh Umum"
+                  />
+                  <button className="btn-primary shrink-0" onClick={() => void addDivision()} disabled={creatingDivision}>
+                    {creatingDivision ? "Menambah..." : "Tambah & pilih"}
+                  </button>
+                </div>
+                {divisionError && <span className="mt-1 block text-xs font-medium text-rose-600">{divisionError}</span>}
+              </div>
+            )}
             <Field label="Status personil">
               <select className="input" value={form.status} onChange={(e) => set("status", e.target.value)}>
                 <option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option>
               </select>
             </Field>
+            {initial && <p className="text-xs text-slate-500 sm:col-span-2">Bagian saat ini otomatis terpilih. Memilih bagian lain akan memperbarui penugasan aktif setelah data disimpan.</p>}
           </div>
         </section>
 
