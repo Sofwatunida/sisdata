@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
@@ -29,10 +29,23 @@ export function Sidebar() {
   const { user, logout } = useApp();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const touchX = useRef<number | null>(null);
 
   useEffect(() => {
     document.documentElement.dataset.sidebar = collapsed ? "mini" : "full";
   }, [collapsed]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && setMobileOpen(false);
+    window.addEventListener("keydown", handler);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [mobileOpen]);
 
   const nav = (
     <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -46,13 +59,13 @@ export function Sidebar() {
             title={collapsed ? item.label : undefined}
             onClick={() => setMobileOpen(false)}
             className={clsx(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
-              active ? "bg-navy-800 text-white shadow-sm" : "text-slate-600 hover:bg-slate-100 hover:text-navy-900",
-              collapsed && "justify-center px-2",
+              "flex min-h-[44px] items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition lg:min-h-0",
+              active ? "bg-navy-800 text-white shadow-sm" : "text-slate-300 hover:bg-white/10 hover:text-white",
+              collapsed && "lg:justify-center lg:px-2",
             )}
           >
             <Icon className="h-[18px] w-[18px] shrink-0" />
-            {!collapsed && <span className="truncate">{item.label}</span>}
+            {(!collapsed || mobileOpen) && <span className="truncate">{item.label}</span>}
           </Link>
         );
       })}
@@ -62,22 +75,28 @@ export function Sidebar() {
   return (
     <>
       <button
-        className="fixed left-4 top-3 z-50 rounded-lg bg-navy-900 p-2 text-white shadow-lg lg:hidden"
+        className="fixed left-3 top-2.5 z-50 flex h-11 w-11 items-center justify-center rounded-lg bg-navy-900 text-white shadow-lg lg:hidden"
         onClick={() => setMobileOpen(true)}
         aria-label="Buka menu"
+        aria-expanded={mobileOpen}
       >
         <Menu className="h-5 w-5" />
       </button>
-      {mobileOpen && <div className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" onClick={() => setMobileOpen(false)} />}
+      {mobileOpen && <div className="fixed inset-0 z-40 bg-slate-900/50 lg:hidden" onClick={() => setMobileOpen(false)} aria-hidden="true" />}
       <aside
         className={clsx(
           "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-navy-900/20 bg-navy-950 text-white transition-all duration-200",
           collapsed ? "w-[76px]" : "w-[248px]",
-          mobileOpen ? "translate-x-0 w-[248px]" : "-translate-x-full lg:translate-x-0",
+          mobileOpen ? "translate-x-0 w-[280px] max-w-[85vw]" : "-translate-x-full lg:translate-x-0",
         )}
+        onTouchStart={(e) => { touchX.current = e.touches[0].clientX; }}
+        onTouchEnd={(e) => {
+          if (touchX.current !== null && e.changedTouches[0].clientX - touchX.current < -60) setMobileOpen(false);
+          touchX.current = null;
+        }}
       >
-        <div className={clsx("flex h-16 items-center border-b border-white/10 px-4", collapsed ? "justify-center" : "justify-between")}>
-          {!collapsed ? (
+        <div className={clsx("flex h-16 shrink-0 items-center border-b border-white/10 px-4", collapsed && !mobileOpen ? "justify-center" : "justify-between")}>
+          {!collapsed || mobileOpen ? (
             <Link href="/dashboard" className="leading-tight" onClick={() => setMobileOpen(false)}>
               <span className="block text-sm font-bold tracking-wide">SISTEM PENDATAAN</span>
               <span className="block text-[11px] font-medium tracking-[0.2em] text-navy-300">PERSONIL</span>
@@ -85,19 +104,19 @@ export function Sidebar() {
           ) : (
             <span className="text-base font-black">SP</span>
           )}
-          <button className="lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Tutup menu"><X className="h-5 w-5 text-slate-300" /></button>
+          <button className="flex h-11 w-11 items-center justify-center rounded-lg text-slate-300 hover:bg-white/10 lg:hidden" onClick={() => setMobileOpen(false)} aria-label="Tutup menu"><X className="h-5 w-5" /></button>
         </div>
         {nav}
-        <div className="border-t border-white/10 p-3">
-          {!collapsed && (
+        <div className="shrink-0 border-t border-white/10 p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:pb-3">
+          {(!collapsed || mobileOpen) && (
             <div className="mb-2 rounded-lg bg-white/5 px-3 py-2 text-xs">
               <p className="truncate font-semibold text-white">{user?.fullName}</p>
               <p className="truncate capitalize text-navy-300">{user?.role} · @{user?.username}</p>
             </div>
           )}
-          <button onClick={() => void logout()} className={clsx("flex w-full items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium text-navy-200 hover:bg-white/10", collapsed && "justify-center")}>
+          <button onClick={() => void logout()} className={clsx("flex min-h-[44px] w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-navy-200 hover:bg-white/10 lg:min-h-0 lg:text-xs", collapsed && !mobileOpen && "lg:justify-center")}>
             <Activity className="h-4 w-4" />
-            {!collapsed && "Keluar"}
+            {(!collapsed || mobileOpen) && "Keluar"}
           </button>
         </div>
       </aside>

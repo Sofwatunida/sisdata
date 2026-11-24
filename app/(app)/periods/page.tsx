@@ -86,15 +86,15 @@ export default function PeriodsPage() {
             <p className="mb-2 text-sm font-semibold text-navy-900">Pilihan yang disalin:</p>
             <div className="grid gap-2 sm:grid-cols-2">
               {[["copy_divisions", "Daftar divisi"], ["copy_requirements", "Kebutuhan personil"], ["copy_leaders", "Penanggung jawab"], ["copy_supervisors", "Data pengawasan"], ["copy_assignments", "Penugasan personil (opsional)"]].map(([key, label]) => (
-                <label key={key} className="flex items-center gap-2 text-sm text-slate-600">
-                  <input type="checkbox" className="h-4 w-4" checked={Boolean(form[key])} onChange={(e) => setForm({ ...form, [key]: e.target.checked })} /> {label}
+                <label key={key} className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm text-slate-600 lg:min-h-0">
+                  <input type="checkbox" className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" checked={Boolean(form[key])} onChange={(e) => setForm({ ...form, [key]: e.target.checked })} /> {label}
                 </label>
               ))}
             </div>
             <p className="mt-2 text-[11px] text-slate-500">Secara default penugasan personil tidak disalin agar data periode lama tidak berubah.</p>
           </div>
         )}
-        <div className="mt-5 flex justify-end gap-2 border-t border-slate-100 pt-4"><button className="btn-secondary" onClick={() => setOpen(false)}>Batal</button><button className="btn-primary" disabled={saving} onClick={() => void save()}>{saving ? "Memproses..." : "Simpan"}</button></div>
+        <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setOpen(false)}>Batal</button><button className="btn-primary" disabled={saving} onClick={() => void save()}>{saving ? "Memproses..." : "Simpan"}</button></div>
       </Modal>
     </div>
   );

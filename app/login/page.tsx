@@ -49,7 +49,16 @@ export default function LoginPage() {
             <p>Data awal: KHIDMAH MILAD 2024.xlsx</p>
           </div>
         </div>
-        <div className="p-8 sm:p-10">
+        <div className="p-6 sm:p-10">
+          <div className="mb-6 flex items-center gap-3 md:hidden">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-navy-900 text-white">
+              <ShieldCheck className="h-6 w-6" />
+            </div>
+            <div className="leading-tight">
+              <p className="text-sm font-bold tracking-wide text-navy-900">SISTEM PENDATAAN</p>
+              <p className="text-[11px] font-medium tracking-[0.2em] text-navy-500">PERSONIL</p>
+            </div>
+          </div>
           <h2 className="text-xl font-bold text-navy-900">Masuk ke akun Anda</h2>
           <p className="mt-1 text-sm text-slate-500">Gunakan akun yang telah diberikan administrator.</p>
           <form onSubmit={submit} className="mt-7 space-y-4">
@@ -65,7 +74,7 @@ export default function LoginPage() {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input className="input !pl-9 !pr-10" type={show ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" autoComplete="current-password" required />
-                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" onClick={() => setShow((v) => !v)} aria-label="Tampilkan password">
+                <button type="button" className="absolute right-0 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center text-slate-400 hover:text-slate-600" onClick={() => setShow((v) => !v)} aria-label="Tampilkan password">
                   {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>

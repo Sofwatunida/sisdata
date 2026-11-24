@@ -38,11 +38,11 @@ export default function ReportsPage() {
     <div>
       <PageHeader title="Rekapitulasi" description="Laporan kebutuhan, kekurangan, dan distribusi personil per bagian" />
       <div className="mb-5 flex flex-wrap items-end gap-3">
-        <label className="min-w-[200px]"><span className="label">Periode</span>
+        <label className="w-full sm:w-auto sm:min-w-[200px]"><span className="label">Periode</span>
           <select className="input" value={periodId} onChange={(e) => setPeriodId(e.target.value)}>{periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
         </label>
-        <div className="flex-1"><SearchBox value={q} onChange={setQ} placeholder="Cari nama bagian..." /></div>
-        <div className="flex flex-wrap gap-2">
+        <div className="w-full flex-1 sm:w-auto"><SearchBox value={q} onChange={setQ} placeholder="Cari nama bagian..." /></div>
+        <div className="flex flex-wrap gap-2 [&>*]:grow sm:[&>*]:grow-0">
           <a className="btn-secondary" href={exportLink("rekap", "xlsx")}><FileDown className="h-4 w-4" /> Rekap XLSX</a>
           <a className="btn-secondary" href={exportLink("rekap", "pdf")}><FileText className="h-4 w-4" /> Rekap PDF</a>
           <a className="btn-secondary" href={exportLink("needs", "xlsx")}><Printer className="h-4 w-4" /> Kebutuhan</a>
@@ -59,7 +59,31 @@ export default function ReportsPage() {
 
       <div className="card overflow-hidden">
         {loading ? <Loading /> : stats.length === 0 ? <EmptyState /> : (
-          <div className="table-wrap">
+          <>
+          <ul className="divide-y divide-slate-100 lg:hidden">
+            {stats.map((s) => {
+              const pct = s.required ? Math.min(100, Math.round((s.active / s.required) * 100)) : 0;
+              return (
+                <li key={s.division.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={`/divisions/${s.division.id}`} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center break-words font-semibold text-navy-800 lg:min-h-0">{s.division.name}</Link>
+                    <span className="shrink-0 text-xs font-semibold text-slate-600">{s.required ? `${pct}%` : "-"}</span>
+                  </div>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">PJ: {s.division.leader_name || "-"}</p>
+                  <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className={s.lacking > 0 ? "h-full bg-amber-400" : "h-full bg-navy-700"} style={{ width: `${pct}%` }} />
+                  </div>
+                  <div className="mt-2 grid grid-cols-4 gap-2 text-center">
+                    <div><p className="text-[11px] text-slate-500">Butuh</p><p className="text-sm font-bold text-navy-900">{s.required}</p></div>
+                    <div><p className="text-[11px] text-slate-500">Aktif</p><p className="text-sm font-bold text-navy-900">{s.active}</p></div>
+                    <div><p className="text-[11px] text-slate-500">Kurang</p><p className={s.lacking > 0 ? "text-sm font-bold text-amber-600" : "text-sm font-bold text-slate-700"}>{s.lacking}</p></div>
+                    <div><p className="text-[11px] text-slate-500">Lebih</p><p className={s.excess > 0 ? "text-sm font-bold text-blue-600" : "text-sm font-bold text-slate-700"}>{s.excess}</p></div>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="table-wrap hidden lg:block">
             <table className="table">
               <thead><tr><th>No</th><th>Nama Bagian</th><th>Penanggung Jawab</th><th className="text-right">Kebutuhan</th><th className="text-right">Terdaftar</th><th className="text-right">Aktif</th><th className="text-right">Kurang</th><th className="text-right">Lebih</th><th>Persentase</th></tr></thead>
               <tbody>
@@ -83,6 +107,7 @@ export default function ReportsPage() {
               <tfoot className="bg-slate-50 font-bold text-navy-900"><tr><td colSpan={3}>TOTAL</td><td className="text-right">{total.required}</td><td className="text-right">-</td><td className="text-right">{total.active}</td><td className="text-right">{total.lacking}</td><td className="text-right">{total.excess}</td><td /></tr></tfoot>
             </table>
           </div>
+          </>
         )}
       </div>
       <p className="mt-3 text-xs text-slate-400">Kekurangan = MAX(0, Kebutuhan − Personil Aktif). Personil aktif dihitung unik per bagian meski memiliki beberapa penugasan.</p>

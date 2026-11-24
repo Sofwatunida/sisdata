@@ -43,15 +43,27 @@ export default function ActivityPage() {
       <div className="card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 lg:flex-row lg:items-center lg:justify-between">
           <SearchBox value={q} onChange={setQ} placeholder="Cari pengguna, aktivitas, atau keterangan..." />
-          <div className="flex flex-wrap gap-2">
-            <select className="input !w-auto !py-1.5 text-xs" value={action} onChange={(e) => setAction(e.target.value)}><option value="">Semua aktivitas</option>{actions.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            <select className="input !w-auto !py-1.5 text-xs" value={division} onChange={(e) => setDivision(e.target.value)}><option value="">Semua bagian</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
-            <input className="input !w-auto !py-1.5 text-xs" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <div className="grid grid-cols-1 gap-2 min-[480px]:grid-cols-2 lg:flex lg:flex-wrap">
+            <select className="input !py-1.5 text-xs lg:!w-auto" value={action} onChange={(e) => setAction(e.target.value)}><option value="">Semua aktivitas</option>{actions.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+            <select className="input !py-1.5 text-xs lg:!w-auto" value={division} onChange={(e) => setDivision(e.target.value)}><option value="">Semua bagian</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select>
+            <input className="input !py-1.5 text-xs min-[480px]:col-span-2 lg:!w-auto" type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Filter tanggal" />
           </div>
         </div>
         {loading ? <Loading /> : filtered.length === 0 ? <EmptyState title="Tidak ada aktivitas" /> : (
           <>
-            <div className="table-wrap"><table className="table">
+            <ul className="divide-y divide-slate-100 lg:hidden">
+              {pageRows.map((l) => (
+                <li key={l.id} className="px-4 py-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <Badge status={l.action}>{l.action}</Badge>
+                    <span className="shrink-0 text-xs text-slate-400">{formatDateTime(l.created_at)}</span>
+                  </div>
+                  <p className="mt-1.5 text-sm text-slate-700">{l.description}</p>
+                  <p className="mt-1 text-xs text-slate-500">{l.actor_name} · {l.entity_type}{l.division_id ? ` · ${divisions.find((d) => d.id === l.division_id)?.name || "-"}` : ""}</p>
+                </li>
+              ))}
+            </ul>
+            <div className="table-wrap hidden lg:block"><table className="table">
               <thead><tr><th>Waktu</th><th>Pengguna</th><th>Aktivitas</th><th>Keterangan</th><th>Jenis Data</th><th>Bagian</th></tr></thead>
               <tbody>
                 {pageRows.map((l) => <tr key={l.id}>

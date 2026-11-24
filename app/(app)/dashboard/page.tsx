@@ -60,7 +60,7 @@ export default function DashboardPage() {
               <h2 className="font-bold text-navy-900">Distribusi Personil per Bagian</h2>
               <p className="text-xs text-slate-500">Jumlah personil aktif berdasarkan data penugasan</p>
             </div>
-            <Link href="/divisions" className="text-xs font-semibold text-navy-700 hover:underline">Semua bagian</Link>
+            <Link href="/divisions" className="inline-flex min-h-[44px] items-center text-xs font-semibold text-navy-700 hover:underline lg:min-h-0">Semua bagian</Link>
           </div>
           {top.length === 0 ? <EmptyState /> : (
             <div className="space-y-3">
@@ -87,7 +87,7 @@ export default function DashboardPage() {
           {lacking.length === 0 ? <EmptyState title="Semua kebutuhan terpenuhi" /> : (
             <div className="space-y-2.5">
               {lacking.map((s) => (
-                <Link key={s.division.id} href={`/divisions/${s.division.id}`} className="flex items-center justify-between rounded-lg border border-slate-100 px-3 py-2 hover:border-navy-200 hover:bg-navy-50/40">
+                <Link key={s.division.id} href={`/divisions/${s.division.id}`} className="flex min-h-[44px] items-center justify-between rounded-lg border border-slate-100 px-3 py-2 hover:border-navy-200 hover:bg-navy-50/40">
                   <span className="truncate pr-2 text-sm text-slate-700">{s.division.name}</span>
                   <span className="shrink-0 badge bg-amber-50 text-amber-700 ring-amber-200">-{s.lacking}</span>
                 </Link>
@@ -101,7 +101,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 border-b border-slate-200 px-5 py-4">
           <Activity className="h-4 w-4 text-navy-700" />
           <h2 className="font-bold text-navy-900">Aktivitas Terbaru</h2>
-          <Link href="/activity" className="ml-auto text-xs font-semibold text-navy-700 hover:underline">Lihat semua</Link>
+          <Link href="/activity" className="ml-auto inline-flex min-h-[44px] items-center text-xs font-semibold text-navy-700 hover:underline lg:min-h-0">Lihat semua</Link>
         </div>
         {logs.length === 0 ? <EmptyState title="Belum ada aktivitas" /> : (
           <ul className="divide-y divide-slate-100">

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { ArrowLeft, Download, Plus, Target, Users } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api } from "@/lib/client/api";
-import { EmptyState, Field, Loading, Modal, PageHeader, Pagination, StatCard, toast } from "@/components/ui";
+import { EmptyState, Field, Loading, Modal, PageHeader, Pagination, SearchBox, StatCard, toast, useDebounce } from "@/components/ui";
 import { PersonnelForm } from "@/components/PersonnelForm";
 import { divisionStats, formatNumber } from "@/lib/utils";
 import type { Assignment, Division, Personnel } from "@/lib/types";
@@ -19,6 +19,7 @@ export default function DivisionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
   const [q, setQ] = useState("");
+  const term = useDebounce(q);
   const [page, setPage] = useState(1);
   const PER = 15;
 
@@ -38,12 +39,13 @@ export default function DivisionDetailPage() {
   const division = divisions.find((d) => d.id === id);
   const stats = useMemo(() => division ? divisionStats([division], assignments)[0] : null, [division, assignments]);
   const rows = useMemo(() => {
-    const term = q.toLowerCase();
+    const t = term.toLowerCase();
     return assignments.filter((a) => a.status === "aktif")
       .map((a) => ({ assignment: a, person: personnel.find((p) => p.id === a.personnel_id) }))
-      .filter((r) => r.person && (!term || [r.person.full_name, r.person.code, r.person.phone, r.person.korwil, r.person.origin, r.assignment.position_name].some((v) => (v || "").toLowerCase().includes(term))))
+      .filter((r) => r.person && (!t || [r.person.full_name, r.person.code, r.person.phone, r.person.korwil, r.person.origin, r.assignment.position_name].some((v) => (v || "").toLowerCase().includes(t))))
       .sort((a, b) => a.person!.full_name.localeCompare(b.person!.full_name));
-  }, [assignments, personnel, q]);
+  }, [assignments, personnel, term]);
+  useEffect(() => setPage(1), [term]);
   const pageRows = rows.slice((page - 1) * PER, page * PER);
 
   if (loading) return <Loading />;
@@ -51,7 +53,7 @@ export default function DivisionDetailPage() {
 
   return (
     <div>
-      <Link href="/divisions" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy-800"><ArrowLeft className="h-4 w-4" /> Kembali ke daftar bagian</Link>
+      <Link href="/divisions" className="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm text-slate-500 hover:text-navy-800 lg:mb-4 lg:min-h-0"><ArrowLeft className="h-4 w-4" /> Kembali ke daftar bagian</Link>
       <PageHeader title={division.name} description={`${division.code} · Penanggung jawab: ${division.leader_name || "-"}`}
         actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=personnel&format=xlsx&division_id=${id}`}><Download className="h-4 w-4" /> Export</button><button className="btn-primary" onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" /> Tambah Personil</button></>} />
 
@@ -65,11 +67,25 @@ export default function DivisionDetailPage() {
       <div className="card mt-5 overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div><h2 className="font-bold text-navy-900">Personil dalam Bagian</h2><p className="text-xs text-slate-500">{rows.length} penugasan aktif</p></div>
-          <input className="input !w-full sm:!w-64" placeholder="Cari personil..." value={q} onChange={(e) => { setQ(e.target.value); setPage(1); }} />
+          <SearchBox value={q} onChange={setQ} placeholder="Cari personil..." />
         </div>
         {rows.length === 0 ? <EmptyState title="Belum ada personil" description="Tambahkan personil langsung dari halaman bagian ini." /> : (
           <>
-            <div className="table-wrap">
+            <ul className="divide-y divide-slate-100 lg:hidden">
+              {pageRows.map((r) => (
+                <li key={r.assignment.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={`/personnel/${r.person!.id}`} className="min-w-0 break-words font-semibold text-navy-800">{r.person!.full_name}</Link>
+                    <span className="shrink-0 badge bg-navy-50 text-navy-700 ring-navy-200">{r.assignment.position_name}</span>
+                  </div>
+                  <p className="mt-0.5 font-mono text-xs text-slate-500">{r.person!.code}</p>
+                  <p className="mt-1 truncate text-xs text-slate-500">{r.person!.korwil || r.person!.origin || "Asal belum diisi"}{r.person!.phone ? ` · ${r.person!.phone}` : ""}</p>
+                  {r.assignment.notes && <p className="mt-1 line-clamp-2 text-xs text-slate-400">{r.assignment.notes}</p>}
+                  <Link href={`/personnel/${r.person!.id}`} className="btn-secondary mt-3 w-full !text-xs">Lihat detail</Link>
+                </li>
+              ))}
+            </ul>
+            <div className="table-wrap hidden lg:block">
               <table className="table">
                 <thead><tr><th>No</th><th>ID Personil</th><th>Nama</th><th>Asal / Korwil</th><th>No. WhatsApp</th><th>Jabatan</th><th>Keterangan</th><th className="text-right">Aksi</th></tr></thead>
                 <tbody>

@@ -64,24 +64,24 @@ export default function SupervisionPage() {
             const list = works.filter((w) => w.supervisor_id === s.id);
             return (
               <div key={s.id} className="card overflow-hidden">
-                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/60 px-5 py-4">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-navy-100 text-navy-700"><ShieldCheck className="h-5 w-5" /></div>
-                  <div><h2 className="font-bold text-navy-900">{s.group_name}</h2><p className="text-xs text-slate-500">Penanggung jawab: {s.name || "-"}</p></div>
-                  <span className="ml-auto text-xs font-semibold text-slate-500">{list.length} pekerjaan</span>
+                <div className="flex items-center gap-3 border-b border-slate-200 bg-slate-50/60 px-4 py-4 sm:px-5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-navy-100 text-navy-700"><ShieldCheck className="h-5 w-5" /></div>
+                  <div className="min-w-0"><h2 className="break-words font-bold text-navy-900">{s.group_name}</h2><p className="truncate text-xs text-slate-500">Penanggung jawab: {s.name || "-"}</p></div>
+                  <span className="ml-auto shrink-0 text-xs font-semibold text-slate-500">{list.length} pekerjaan</span>
                 </div>
                 {list.length === 0 ? <EmptyState title="Belum ada pekerjaan" /> : (
                   <ul className="divide-y divide-slate-100">
                     {list.map((w, i) => (
-                      <li key={w.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
-                        <span className="w-5 text-xs text-slate-400">{i + 1}.</span>
-                        <span className="flex-1 font-medium text-slate-700">{w.name}</span>
-                        <button className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-navy-700" onClick={() => openForm(w)}><Pencil className="h-3.5 w-3.5" /></button>
-                        <button className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => void remove(w)}><Trash2 className="h-3.5 w-3.5" /></button>
+                      <li key={w.id} className="flex items-center gap-2 px-4 py-2 text-sm sm:gap-3 sm:px-5 sm:py-2.5">
+                        <span className="w-5 shrink-0 text-xs text-slate-400">{i + 1}.</span>
+                        <span className="min-w-0 flex-1 break-words font-medium text-slate-700">{w.name}</span>
+                        <button className="icon-btn" onClick={() => openForm(w)} aria-label={`Edit ${w.name}`}><Pencil className="h-4 w-4" /></button>
+                        <button className="icon-btn !text-rose-600 hover:!bg-rose-50" onClick={() => void remove(w)} aria-label={`Hapus ${w.name}`}><Trash2 className="h-4 w-4" /></button>
                       </li>
                     ))}
                   </ul>
                 )}
-                <div className="border-t border-slate-100 px-5 py-3"><button className="text-xs font-semibold text-navy-700 hover:underline" onClick={() => openForm(undefined, s.id)}>+ Tambah pekerjaan pada kelompok ini</button></div>
+                <div className="border-t border-slate-100 px-4 py-2 sm:px-5 sm:py-3"><button className="min-h-[44px] text-xs font-semibold text-navy-700 hover:underline lg:min-h-0" onClick={() => openForm(undefined, s.id)}>+ Tambah pekerjaan pada kelompok ini</button></div>
               </div>
             );
           })}
@@ -93,7 +93,7 @@ export default function SupervisionPage() {
           <Field label="Kelompok pengawas"><select className="input" value={form.supervisor_id || ""} onChange={(e) => setForm({ ...form, supervisor_id: e.target.value })}>{supervisors.map((s) => <option key={s.id} value={s.id}>{s.group_name} · {s.name}</option>)}</select></Field>
           <Field label="Nama pekerjaan *"><input className="input" value={form.name || ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label="Keterangan"><textarea className="input" value={form.notes || ""} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
-          <div className="flex justify-end gap-2 pt-2"><button className="btn-secondary" onClick={() => setOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void save()}>Simpan</button></div>
+          <div className="flex gap-2 pt-2 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void save()}>Simpan</button></div>
         </div>
       </Modal>
     </div>

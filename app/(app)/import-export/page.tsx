@@ -129,8 +129,8 @@ export default function ImportExportPage() {
               <Field label="Sheet yang akan diproses">
                 <div className="max-h-32 space-y-1 overflow-y-auto rounded-lg border border-slate-200 p-2">
                   {sheets.map((s) => (
-                    <label key={s} className="flex items-center gap-2 rounded px-1 py-1 text-sm hover:bg-slate-50">
-                      <input type="checkbox" className="h-4 w-4" checked={selectedSheets.includes(s)} onChange={() => setSelectedSheets((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])} /> {s}
+                    <label key={s} className="flex min-h-[40px] cursor-pointer items-center gap-2 rounded px-2 py-1.5 text-sm hover:bg-slate-50">
+                      <input type="checkbox" className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" checked={selectedSheets.includes(s)} onChange={() => setSelectedSheets((prev) => prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s])} /> <span className="min-w-0 truncate">{s}</span>
                     </label>
                   ))}
                 </div>
@@ -139,12 +139,12 @@ export default function ImportExportPage() {
                 {([["name", "Kolom Nama"], ["korwil", "Kolom Korwil/Asal"], ["phone", "Kolom No. HP/Telepon"], ["notes", "Kolom Keterangan"]] as const).map(([key, label]) => (
                   <Field key={key} label={label}><input className="input" placeholder="Otomatis" value={mapping[key]} onChange={(e) => setMapping({ ...mapping, [key]: e.target.value })} /></Field>
                 ))}
-                <Field label="Baris header (opsional)"><input className="input" placeholder="Mis. 6" value={mapping.header_row} onChange={(e) => setMapping({ ...mapping, header_row: e.target.value })} /></Field>
+                <Field label="Baris header (opsional)"><input className="input" inputMode="numeric" placeholder="Mis. 6" value={mapping.header_row} onChange={(e) => setMapping({ ...mapping, header_row: e.target.value })} /></Field>
                 <Field label="Bagian tujuan"><select className="input" value={exportForm.division_id} onChange={(e) => setExportForm({ ...exportForm, division_id: e.target.value })}><option value="">Otomatis per sheet</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
               </div>
-              <div className="flex gap-2">
-                <button className="btn-primary" onClick={() => void doPreview()} disabled={loading || !selectedSheets.length}>{loading ? "Memproses..." : "Preview Data"}</button>
-                <button className="btn-secondary" onClick={() => { setFile(null); setPreview(null); setSelected(new Set()); }}>Bersihkan</button>
+              <div className="flex flex-wrap gap-2">
+                <button className="btn-primary flex-1 sm:flex-none" onClick={() => void doPreview()} disabled={loading || !selectedSheets.length}>{loading ? "Memproses..." : "Preview Data"}</button>
+                <button className="btn-secondary flex-1 sm:flex-none" onClick={() => { setFile(null); setPreview(null); setSelected(new Set()); }}>Bersihkan</button>
               </div>
             </div>
           )}
@@ -183,13 +183,38 @@ export default function ImportExportPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs text-slate-500">{selected.size} baris dipilih</span>
               <button className="btn-secondary !py-1.5 !text-xs" onClick={() => setSelected(new Set(rows.map((r) => r.token)))}>Pilih semua</button>
-              <button className="btn-primary !py-1.5 !text-xs" onClick={() => void doCommit()} disabled={loading || !selected.size}>Lanjutkan Import</button>
+              <button className="btn-primary grow !py-1.5 !text-xs sm:grow-0" onClick={() => void doCommit()} disabled={loading || !selected.size}>Lanjutkan Import</button>
             </div>
           </div>
           {preview.sheets.some((s) => s.header_row < 0) && <div className="bg-amber-50 px-5 py-2 text-xs text-amber-800">Ada sheet tanpa tabel personil yang dikenali; baris tersebut dilewati dan tidak akan diimport.</div>}
           {rows.length === 0 ? <EmptyState title="Tidak ada baris personil terdeteksi" /> : (
             <>
-              <div className="table-wrap"><table className="table">
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-3 border-b border-slate-100 px-4 py-2 text-xs font-medium text-slate-500 lg:hidden">
+                <input type="checkbox" className="h-5 w-5" checked={pageRows.length > 0 && pageRows.every((r) => selected.has(r.token))} onChange={() => setSelected((s) => { const n = new Set(s); pageRows.forEach((r) => n.has(r.token) ? n.delete(r.token) : n.add(r.token)); return n; })} />
+                Pilih semua di halaman ini
+              </label>
+              <ul className="divide-y divide-slate-100 lg:hidden">
+                {pageRows.map((r) => (
+                  <li key={r.token} className="p-4">
+                    <div className="flex items-start gap-3">
+                      <label className="-m-3 shrink-0 cursor-pointer p-3">
+                        <input type="checkbox" className="block h-5 w-5" checked={selected.has(r.token)} onChange={() => setSelected((s) => { const n = new Set(s); n.has(r.token) ? n.delete(r.token) : n.add(r.token); return n; })} aria-label={`Pilih ${r.display.name}`} />
+                      </label>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="min-w-0 break-words font-semibold text-navy-900">{r.display.name}</p>
+                          <Badge status={r.status} />
+                        </div>
+                        <p className="mt-0.5 text-xs text-slate-500">{r.source_sheet}:{r.source_row}</p>
+                        <p className="mt-1 truncate text-xs text-slate-600">{r.display.korwil || "-"}{r.display.phone ? ` · ${r.display.phone}` : ""}</p>
+                        {r.display.notes && <p className="mt-1 line-clamp-2 text-xs text-slate-400">{r.display.notes}</p>}
+                        {r.message && <p className="mt-1 text-xs font-medium text-amber-700">{r.message}</p>}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+              <div className="table-wrap hidden lg:block"><table className="table">
                 <thead><tr><th><input type="checkbox" checked={pageRows.length > 0 && pageRows.every((r) => selected.has(r.token))} onChange={() => setSelected((s) => { const n = new Set(s); pageRows.forEach((r) => n.has(r.token) ? n.delete(r.token) : n.add(r.token)); return n; })} /></th><th>Status</th><th>Sheet : Baris</th><th>Nama</th><th>Korwil</th><th>No. Telepon</th><th>Keterangan</th><th>Catatan</th></tr></thead>
                 <tbody>
                   {pageRows.map((r) => <tr key={r.token}>
@@ -229,7 +254,7 @@ export default function ImportExportPage() {
               </li>)}
             </ul>
           )}
-          <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-slate-100 pt-3">
             <a className="btn-secondary !py-1.5 !text-xs" href="/api/export?type=full&format=json">Unduh backup JSON</a>
             <button className="btn-secondary !py-1.5 !text-xs" onClick={async () => {
               if (!(await confirmDialog("Muat data awal dari spreadsheet?", "Data yang sudah ada tidak akan ditimpa. Hanya entri baru yang ditambahkan.", "Muat"))) return;

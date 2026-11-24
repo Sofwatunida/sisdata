@@ -10,6 +10,11 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   @apply bg-slate-50 text-slate-800 antialiased;
   font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -74,5 +79,51 @@ body {
   }
   .badge {
     @apply inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ring-1 ring-inset;
+  }
+  .icon-btn {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-navy-800 lg:h-9 lg:w-9;
+  }
+}
+
+@media (max-width: 1023px) {
+  .btn {
+    min-height: 44px;
+  }
+  .input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  select.input {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .swal2-container {
+    padding: 1rem !important;
+  }
+  .swal2-popup:not(.swal2-toast) {
+    width: 100% !important;
+    max-width: calc(100vw - 2rem) !important;
+    padding: 1.25rem 1rem !important;
+  }
+  .swal2-popup:not(.swal2-toast) .swal2-title {
+    font-size: 1.1rem !important;
+  }
+  .swal2-popup:not(.swal2-toast) .swal2-html-container {
+    font-size: 0.9rem !important;
+  }
+  .swal2-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .swal2-styled {
+    min-height: 44px;
+    min-width: 110px;
+    margin: 0 !important;
+  }
+  .swal2-toast {
+    max-width: calc(100vw - 2rem) !important;
   }
 }

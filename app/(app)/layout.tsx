@@ -24,12 +24,12 @@ function Shell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-slate-50">
       <Sidebar />
       <div className="app-main min-h-screen transition-[margin] duration-200">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:pl-20">
-          <div className="flex items-center gap-3 pl-12 lg:pl-0">
-            <div className="hidden items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5 sm:flex">
-              <CalendarRange className="h-4 w-4 text-navy-700" />
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:gap-3 sm:px-6 lg:pl-20">
+          <div className="flex min-w-0 items-center gap-3 pl-12 lg:pl-0">
+            <div className="flex min-w-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-2 sm:gap-2 sm:px-3 sm:py-1.5">
+              <CalendarRange className="hidden h-4 w-4 shrink-0 text-navy-700 sm:block" />
               <select
-                className="max-w-[190px] cursor-pointer bg-transparent text-sm font-medium text-slate-700 outline-none"
+                className="w-full min-h-[44px] min-w-0 max-w-[130px] cursor-pointer truncate bg-transparent text-sm font-medium text-slate-700 outline-none sm:min-h-0 sm:max-w-[190px]"
                 value={activePeriodId}
                 onChange={(e) => setActivePeriodId(e.target.value)}
                 aria-label="Pilih periode aktif"
@@ -37,12 +37,12 @@ function Shell({ children }: { children: React.ReactNode }) {
                 {periods.length === 0 && <option value="">Belum ada periode</option>}
                 {periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
-              <ChevronDown className="h-3 w-3 text-slate-400" />
+              <ChevronDown className="h-3 w-3 shrink-0 text-slate-400" />
             </div>
-            <span className="text-sm font-semibold text-navy-900 lg:hidden">Pendataan Personil</span>
+            <span className="hidden text-sm font-semibold text-navy-900 md:inline lg:hidden">Pendataan Personil</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Link href="/personnel" className="btn-secondary !px-2.5 !py-1.5" aria-label="Cari personil">
+          <div className="flex shrink-0 items-center gap-2">
+            <Link href="/personnel" className="btn-secondary h-11 w-11 !p-0 sm:h-auto sm:w-auto sm:!px-2.5 sm:!py-1.5" aria-label="Cari personil">
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Cari data</span>
             </Link>
@@ -51,7 +51,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8">
+        <main className="mx-auto w-full max-w-[1500px] px-4 py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 lg:px-8">
           {period && <p className="mb-4 text-xs text-slate-400">Periode aktif: <span className="font-semibold text-slate-600">{period.name}</span>{period.status !== "aktif" && ` · ${period.status}`}</p>}
           {children}
         </main>

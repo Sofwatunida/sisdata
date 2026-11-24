@@ -88,7 +88,7 @@ export default function PersonnelDetailPage() {
 
   return (
     <div>
-      <Link href="/personnel" className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-navy-800"><ArrowLeft className="h-4 w-4" /> Kembali ke data personil</Link>
+      <Link href="/personnel" className="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm text-slate-500 hover:text-navy-800 lg:mb-4 lg:min-h-0"><ArrowLeft className="h-4 w-4" /> Kembali ke data personil</Link>
       <PageHeader title={person.full_name} description={`${person.code} · ${person.korwil || person.origin || "Asal belum diisi"}`}
         actions={<><button className="btn-secondary" onClick={() => void openMerge()}><GitMerge className="h-4 w-4" /> Periksa duplikat</button><button className="btn-primary" onClick={() => setEditOpen(true)}><Pencil className="h-4 w-4" /> Edit data</button></>} />
 
@@ -106,7 +106,7 @@ export default function PersonnelDetailPage() {
               ["Asal daerah", person.origin || "-"],
               ["Korwil", person.korwil || "-"],
               ["Alamat", person.address || "-"],
-            ].map(([label, value]) => <div key={String(label)} className="flex justify-between gap-3"><dt className="text-slate-500">{label}</dt><dd className="text-right font-medium text-slate-800">{value}</dd></div>)}
+            ].map(([label, value]) => <div key={String(label)} className="flex flex-col gap-0.5 min-[480px]:flex-row min-[480px]:justify-between min-[480px]:gap-3"><dt className="shrink-0 text-slate-500">{label}</dt><dd className="min-w-0 break-words font-medium text-slate-800 min-[480px]:text-right">{value}</dd></div>)}
           </dl>
           <div className="mt-4 space-y-2 border-t border-slate-100 pt-4 text-sm">
             <p className="flex items-center gap-2 text-slate-600"><Phone className="h-4 w-4 text-navy-700" /> {person.phone || "Nomor belum diisi"}</p>
@@ -117,7 +117,7 @@ export default function PersonnelDetailPage() {
         </div>
 
         <div className="card overflow-hidden lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 sm:px-5 sm:py-4">
             <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-navy-700" /><h2 className="font-bold text-navy-900">Riwayat Penugasan</h2></div>
             <button className="btn-primary !py-1.5 !text-xs" onClick={() => setAssignOpen(true)}><Plus className="h-3.5 w-3.5" /> Tambah penugasan</button>
           </div>
@@ -145,11 +145,11 @@ export default function PersonnelDetailPage() {
                         {a.notes && <p className="mt-1 text-xs text-slate-500">{a.notes}</p>}
                         {a.status === "aktif" && (
                           <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <select className="input !w-auto !py-1 !text-xs" value={moveId === a.id ? form.division_id : ""} onChange={(e) => { setMoveId(a.id); setForm((f) => ({ ...f, division_id: e.target.value })); }}>
+                            <select className="input w-full !py-1 !text-xs sm:!w-auto" value={moveId === a.id ? form.division_id : ""} onChange={(e) => { setMoveId(a.id); setForm((f) => ({ ...f, division_id: e.target.value })); }}>
                               <option value="">Pindahkan ke...</option>{divisions.filter((d) => d.id !== a.division_id).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                             </select>
                             {moveId === a.id && <button className="btn-secondary !py-1 !text-xs" onClick={() => void move(a.id, form.division_id)}>Simpan pindahan</button>}
-                            <button className="text-xs font-medium text-rose-600 hover:underline" onClick={() => void endAssignment(a.id)}>Akhiri penugasan</button>
+                            <button className="min-h-[44px] text-xs font-medium text-rose-600 hover:underline lg:min-h-0" onClick={() => void endAssignment(a.id)}>Akhiri penugasan</button>
                           </div>
                         )}
                       </div>
@@ -170,7 +170,7 @@ export default function PersonnelDetailPage() {
           <Field label="Bagian / divisi"><select className="input" value={form.division_id} onChange={(e) => setForm({ ...form, division_id: e.target.value })}><option value="">Pilih bagian...</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
           <Field label="Jabatan"><input className="input" value={form.position_name} onChange={(e) => setForm({ ...form, position_name: e.target.value })} /></Field>
           <Field label="Keterangan"><textarea className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
-          <div className="flex justify-end gap-2 pt-2"><button className="btn-secondary" onClick={() => setAssignOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void addAssignment()}>Simpan</button></div>
+          <div className="flex gap-2 pt-2 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setAssignOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void addAssignment()}>Simpan</button></div>
         </div>
       </Modal>
 
@@ -179,13 +179,13 @@ export default function PersonnelDetailPage() {
         {duplicates.length === 0 ? <EmptyState title="Tidak ada kemungkinan duplikat" /> : (
           <div className="space-y-2">
             {duplicates.map((d) => (
-              <label key={d.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm">
-                <input type="checkbox" className="h-4 w-4" checked={mergeIds.has(d.id)} onChange={() => setMergeIds((s) => { const n = new Set(s); n.has(d.id) ? n.delete(d.id) : n.add(d.id); return n; })} />
-                <span className="font-mono text-xs text-slate-500">{d.code}</span><span className="font-semibold">{d.full_name}</span>
-                <span className="ml-auto text-xs text-slate-500">{d.phone || "-"} · {d.korwil || d.origin || "-"}</span>
+              <label key={d.id} className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-200 p-3 text-sm">
+                <input type="checkbox" className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" checked={mergeIds.has(d.id)} onChange={() => setMergeIds((s) => { const n = new Set(s); n.has(d.id) ? n.delete(d.id) : n.add(d.id); return n; })} />
+                <span className="font-mono text-xs text-slate-500">{d.code}</span><span className="min-w-0 break-words font-semibold">{d.full_name}</span>
+                <span className="w-full pl-8 text-xs text-slate-500 sm:ml-auto sm:w-auto sm:pl-0">{d.phone || "-"} · {d.korwil || d.origin || "-"}</span>
               </label>
             ))}
-            <button className="btn-danger mt-3" disabled={!mergeIds.size} onClick={async () => {
+            <button className="btn-danger mt-3 w-full sm:w-auto" disabled={!mergeIds.size} onClick={async () => {
               if (!(await confirmDialog(`Gabungkan ${mergeIds.size} data?`, "Proses tidak membatalkan riwayat penugasan.", "Gabungkan"))) return;
               try { await post("/api/action", { action: "merge_personnel", payload: { target_id: params.id, source_ids: [...mergeIds] } }); toast("Data duplikat digabungkan"); setMergeOpen(false); await load(); }
               catch (e) { toast((e as Error).message, "error"); }
