@@ -78,6 +78,11 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
         return fail("DUPLICATE_WARNING: Personil dengan identitas serupa sudah terdaftar. Periksa sebelum menyimpan.", 409);
       }
     }
+    if (resource === "periods") {
+      const name = String(payload.name || "").trim();
+      if (!name) return fail("Nama periode wajib diisi");
+      payload.name = name;
+    }
     if (resource === "divisions") {
       const name = normalizeDivisionName(String(payload.name || ""));
       if (!name) return fail("Nama bagian wajib diisi");

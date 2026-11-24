@@ -67,6 +67,11 @@ export async function PATCH(req: NextRequest, ctx: Ctx) {
     if (resource === "personnel" || resource === "assignments" || resource === "divisions") {
       if (!(await canAccessDivision(session, divisionId, "edit"))) throw new Error("FORBIDDEN");
     }
+    if (resource === "periods") {
+      const name = String(changes.name ?? ((before as { name?: string }).name || "")).trim();
+      if (!name) return fail("Nama periode wajib diisi");
+      changes.name = name;
+    }
     if (resource === "divisions") {
       const nextName = changes.name !== undefined
         ? normalizeDivisionName(String(changes.name))
