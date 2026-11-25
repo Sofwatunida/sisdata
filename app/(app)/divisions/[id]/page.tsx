@@ -3,21 +3,23 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Download, Plus, Target, Users } from "lucide-react";
+import { ArrowLeft, Download, Layers3, Pencil, Plus, Target, Users } from "lucide-react";
 import { useApp } from "@/components/AppContext";
-import { api } from "@/lib/client/api";
-import { EmptyState, Field, Loading, Modal, PageHeader, Pagination, SearchBox, StatCard, toast, useDebounce } from "@/components/ui";
+import { api, patch } from "@/lib/client/api";
+import { Badge, EmptyState, Field, Loading, Modal, PageHeader, Pagination, SearchBox, StatCard, confirmDialog, toast, useDebounce } from "@/components/ui";
 import { PersonnelForm } from "@/components/PersonnelForm";
 import { divisionStats, formatNumber } from "@/lib/utils";
 import type { Assignment, Division, Personnel } from "@/lib/types";
 
 export default function DivisionDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { divisions, refresh } = useApp();
+  const { divisions, bidangs, coordinators, user, refresh } = useApp();
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOpen, setFormOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [divisionForm, setDivisionForm] = useState<Record<string, any>>({});
   const [q, setQ] = useState("");
   const term = useDebounce(q);
   const [page, setPage] = useState(1);
@@ -37,6 +39,37 @@ export default function DivisionDetailPage() {
   useEffect(() => { void load(); }, [id]);
 
   const division = divisions.find((d) => d.id === id);
+  const bidang = bidangs.find((b) => b.id === division?.bidang_id);
+  const coordinatorNames = coordinators.filter((c) => c.bidang_id === division?.bidang_id).map((c) => c.name || c.phone || "-").join(" · ");
+  const openEdit = () => {
+    if (!division) return;
+    setDivisionForm({ ...division });
+    setEditOpen(true);
+  };
+  async function saveDivision() {
+    if (!String(divisionForm.name || "").trim()) { toast("Nama bagian wajib diisi", "error"); return; }
+    try {
+      await patch(`/api/data/divisions/${id}`, {
+        name: String(divisionForm.name || ""),
+        bidang_id: String(divisionForm.bidang_id || "") || null,
+        leader_name: String(divisionForm.leader_name || ""),
+        leader_phone: String(divisionForm.leader_phone || ""),
+        coordinator_name: String(divisionForm.coordinator_name || ""),
+        required_count: Number(divisionForm.required_count) || 0,
+        notes: String(divisionForm.notes || ""),
+        is_active: Boolean(divisionForm.is_active),
+        is_archived: Boolean(divisionForm.is_archived),
+      });
+      toast("Informasi bagian diperbarui"); setEditOpen(false); await refresh();
+    } catch (e) { toast((e as Error).message, "error"); }
+  }
+  async function toggleArchive() {
+    if (!division) return;
+    const next = !division.is_archived;
+    if (!(await confirmDialog(next ? `Arsipkan "${division.name}"?` : `Aktifkan kembali "${division.name}"?`, "Data personil dan penugasan tidak dihapus.", next ? "Arsipkan" : "Aktifkan"))) return;
+    try { await patch(`/api/data/divisions/${id}`, { is_archived: next }); toast(next ? "Bagian diarsipkan" : "Bagian diaktifkan"); await refresh(); }
+    catch (e) { toast((e as Error).message, "error"); }
+  }
   const stats = useMemo(() => division ? divisionStats([division], assignments)[0] : null, [division, assignments]);
   const rows = useMemo(() => {
     const t = term.toLowerCase();
@@ -54,8 +87,12 @@ export default function DivisionDetailPage() {
   return (
     <div>
       <Link href="/divisions" className="mb-2 inline-flex min-h-[44px] items-center gap-1 text-sm text-slate-500 hover:text-navy-800 lg:mb-4 lg:min-h-0"><ArrowLeft className="h-4 w-4" /> Kembali ke daftar bagian</Link>
-      <PageHeader title={division.name} description={`${division.code} · Penanggung jawab: ${division.leader_name || "-"}`}
-        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=personnel&format=xlsx&division_id=${id}`}><Download className="h-4 w-4" /> Export</button><button className="btn-primary" onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" /> Tambah Personil</button></>} />
+      <PageHeader title={division.name} description={`${division.code} · ${bidang ? `Bidang: ${bidang.name} · ` : ""}Penanggung jawab: ${division.leader_name || "-"}`}
+        actions={<>
+          <button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=personnel&format=xlsx&division_id=${id}`}><Download className="h-4 w-4" /> Export</button>
+          {user?.role === "admin" && <><button className="btn-secondary" onClick={() => void toggleArchive()}><Layers3 className="h-4 w-4" /> {division.is_archived ? "Aktifkan" : "Arsipkan"}</button><button className="btn-secondary" onClick={openEdit}><Pencil className="h-4 w-4" /> Edit</button></>}
+          <button className="btn-primary" onClick={() => setFormOpen(true)}><Plus className="h-4 w-4" /> Tambah Personil</button>
+        </>} />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Kebutuhan" value={stats.required} icon={<Target className="h-5 w-5" />} />
@@ -110,15 +147,33 @@ export default function DivisionDetailPage() {
       </div>
 
       <div className="card mt-5 p-5">
-        <h2 className="mb-3 font-bold text-navy-900">Informasi Bagian</h2>
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="font-bold text-navy-900">Informasi Bagian</h2>
+          <Badge status={division.is_archived ? "nonaktif" : division.is_active ? "aktif" : "nonaktif"} />
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Bidang induk"><input className="input" value={bidang?.name || "-"} readOnly /></Field>
           <Field label="Penanggung jawab"><input className="input" value={division.leader_name || "-"} readOnly /></Field>
-          <Field label="Ketua / koordinator"><input className="input" value={division.coordinator_name || "-"} readOnly /></Field>
+          <Field label="No. WhatsApp ketua"><input className="input" value={division.leader_phone || "-"} readOnly /></Field>
+          <Field label="Ketua / koordinator bidang"><input className="input" value={coordinatorNames || division.coordinator_name || "-"} readOnly /></Field>
           <Field label="Kategori"><input className="input" value={division.category || "-"} readOnly /></Field>
-          <Field label="Sumber data"><input className="input" value={division.source_sheet || "Input aplikasi"} readOnly /></Field>
+          <Field label="Sumber data"><input className="input" value={division.source_file || division.source_sheet || "Input aplikasi"} readOnly /></Field>
           <div className="sm:col-span-2"><Field label="Keterangan"><input className="input" value={division.notes || "-"} readOnly /></Field></div>
         </div>
       </div>
+
+      <Modal open={editOpen} onClose={() => setEditOpen(false)} title={`Edit Bagian · ${division.code}`}>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2"><Field label="Nama bagian *"><input className="input" value={String(divisionForm.name || "")} onChange={(e) => setDivisionForm({ ...divisionForm, name: e.target.value })} /></Field></div>
+          <div className="sm:col-span-2"><Field label="Bidang induk"><select className="input" value={String(divisionForm.bidang_id || "")} onChange={(e) => setDivisionForm({ ...divisionForm, bidang_id: e.target.value })}><option value="">Tanpa bidang</option>{bidangs.filter((b) => b.period_id === division.period_id).map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}</select></Field></div>
+          <Field label="Penanggung jawab"><input className="input" value={String(divisionForm.leader_name || "")} onChange={(e) => setDivisionForm({ ...divisionForm, leader_name: e.target.value })} /></Field>
+          <Field label="No. WhatsApp ketua"><input className="input" value={String(divisionForm.leader_phone || "")} onChange={(e) => setDivisionForm({ ...divisionForm, leader_phone: e.target.value })} /></Field>
+          <Field label="Koordinator (legacy)"><input className="input" value={String(divisionForm.coordinator_name || "")} onChange={(e) => setDivisionForm({ ...divisionForm, coordinator_name: e.target.value })} /></Field>
+          <Field label="Kebutuhan personil"><input className="input" type="number" min="0" value={Number(divisionForm.required_count) || 0} onChange={(e) => setDivisionForm({ ...divisionForm, required_count: Number(e.target.value) })} /></Field>
+          <div className="sm:col-span-2"><Field label="Keterangan"><textarea className="input" value={String(divisionForm.notes || "")} onChange={(e) => setDivisionForm({ ...divisionForm, notes: e.target.value })} /></Field></div>
+        </div>
+        <div className="mt-5 flex gap-2 border-t border-slate-100 pt-4 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setEditOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void saveDivision()}>Simpan</button></div>
+      </Modal>
 
       <PersonnelForm open={formOpen} onClose={() => setFormOpen(false)} defaultDivisionId={id} defaultPeriodId={division.period_id} onSaved={async () => { await load(); await refresh(); }} />
       <p className="mt-3 text-xs text-slate-400">Total penugasan tercatat: {formatNumber(assignments.length)}</p>

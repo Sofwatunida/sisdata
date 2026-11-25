@@ -1,0 +1,806 @@
+﻿{
+  "period": {
+    "name": "Haul Imam Al Ghazali 2026",
+    "year": "2026",
+    "status": "aktif",
+    "description": "Struktur koordinasi devisi Haul Imam Al Ghazali 2026",
+    "source_file": "ketua devisi dan koordinator panitia haul imam ghozali 2026 - Sheet1-1.pdf"
+  },
+  "source_file": "ketua devisi dan koordinator panitia haul imam ghozali 2026 - Sheet1-1.pdf",
+  "source_sheet": "Sheet1",
+  "fields": [
+    {
+      "name": "KANTOR",
+      "sort_order": 1,
+      "coordinators": [
+        {
+          "name": "KANG PEPEP",
+          "phone": "",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 1,
+          "name": "PUSAT INFORMASI",
+          "leader_name": "KANG AOS",
+          "leader_phone": "087779984494",
+          "notes": "",
+          "sort_order": 1,
+          "source_row": 3
+        },
+        {
+          "source_no": 2,
+          "name": "PENERIMAAN RELAWAN",
+          "leader_name": "HUSNI ,MG ACE,MG ANIL",
+          "leader_phone": "085771173991 / 083822643092",
+          "notes": "",
+          "sort_order": 2,
+          "source_row": 4
+        },
+        {
+          "source_no": 3,
+          "name": "PENERTIBAN TIM KHIDMAH",
+          "leader_name": "MG FURKON",
+          "leader_phone": "083808023163",
+          "notes": "",
+          "sort_order": 3,
+          "source_row": 5
+        },
+        {
+          "source_no": 4,
+          "name": "PENERIMAAN BARANG",
+          "leader_name": "MILAH ,RIZAL KANTOR",
+          "leader_phone": "083111626742 / 083143671112",
+          "notes": "",
+          "sort_order": 4,
+          "source_row": 6
+        }
+      ]
+    },
+    {
+      "name": "KEAMANAN",
+      "sort_order": 2,
+      "coordinators": [
+        {
+          "name": "PA IHSAN",
+          "phone": "",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 5,
+          "name": "PENERIMAAN TAMU KHUSUS",
+          "leader_name": "A MAMET & MG ANAS",
+          "leader_phone": "081573777007 / 085863164424",
+          "notes": "",
+          "sort_order": 5,
+          "source_row": 7
+        },
+        {
+          "source_no": 6,
+          "name": "PENERTIBAN JAMA'AH UMUM (PUTRI)",
+          "leader_name": "Mg YANI",
+          "leader_phone": "083120291391",
+          "notes": "",
+          "sort_order": 6,
+          "source_row": 8
+        },
+        {
+          "source_no": 7,
+          "name": "PENERTIBAN JAMA'AH UMUM (PUTRA)",
+          "leader_name": "MG IMAM",
+          "leader_phone": "081312849367",
+          "notes": "",
+          "sort_order": 7,
+          "source_row": 9
+        },
+        {
+          "source_no": 8,
+          "name": "PENERTIBAN PANGGUNG",
+          "leader_name": "HABIB AGIL",
+          "leader_phone": "081297895578",
+          "notes": "",
+          "sort_order": 8,
+          "source_row": 10
+        },
+        {
+          "source_no": 9,
+          "name": "PARKIRAN LUAR PAJADA",
+          "leader_name": "MG KODRAT",
+          "leader_phone": "085217160532",
+          "notes": "",
+          "sort_order": 9,
+          "source_row": 11
+        },
+        {
+          "source_no": 10,
+          "name": "HUMAS",
+          "leader_name": "PA WINDA & BANG WINDA",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 10,
+          "source_row": 12
+        },
+        {
+          "source_no": 11,
+          "name": "PARKIRAN DALAM PAJADA (MOTOR)",
+          "leader_name": "MG AIP",
+          "leader_phone": "082125007197",
+          "notes": "",
+          "sort_order": 11,
+          "source_row": 13
+        },
+        {
+          "source_no": 12,
+          "name": "PARKIRAN DALAM PAJADA (MOBIL)",
+          "leader_name": "GEPENG",
+          "leader_phone": "089657672346",
+          "notes": "",
+          "sort_order": 12,
+          "source_row": 14
+        },
+        {
+          "source_no": 13,
+          "name": "POSKO KESEHATAN",
+          "leader_name": "ISTRI UST JEJEN",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 13,
+          "source_row": 15
+        }
+      ]
+    },
+    {
+      "name": "KESIAPAN ACARA",
+      "sort_order": 3,
+      "coordinators": [
+        {
+          "name": "MG DICKY",
+          "phone": "082299114008",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 14,
+          "name": "TENDA",
+          "leader_name": "NAZAR & FAUZAN",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 14,
+          "source_row": 16
+        },
+        {
+          "source_no": 15,
+          "name": "PERAIRAN",
+          "leader_name": "IKBAL",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 15,
+          "source_row": 17
+        },
+        {
+          "source_no": 16,
+          "name": "KELISTRIKAN",
+          "leader_name": "MG AJANG",
+          "leader_phone": "083164098437",
+          "notes": "",
+          "sort_order": 16,
+          "source_row": 18
+        },
+        {
+          "source_no": 17,
+          "name": "DEKORASI",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 17,
+          "source_row": 19
+        },
+        {
+          "source_no": 18,
+          "name": "TATA RUANG",
+          "leader_name": "MG DICKY",
+          "leader_phone": "082299114008",
+          "notes": "",
+          "sort_order": 18,
+          "source_row": 20
+        }
+      ]
+    },
+    {
+      "name": "KONSUMSI",
+      "sort_order": 4,
+      "coordinators": [
+        {
+          "name": "UST JEJEN",
+          "phone": "081286584933",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 19,
+          "name": "STAND MAKANAN",
+          "leader_name": "MG EFUL NANCE",
+          "leader_phone": "083861103053",
+          "notes": "",
+          "sort_order": 19,
+          "source_row": 21
+        },
+        {
+          "source_no": 20,
+          "name": "STAND KOPI",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 20,
+          "source_row": 22
+        },
+        {
+          "source_no": 21,
+          "name": "BAJIGUR",
+          "leader_name": "HASAN BALOK,TIM CENDOL CIANJUR",
+          "leader_phone": "085882147495",
+          "notes": "",
+          "sort_order": 21,
+          "source_row": 23
+        },
+        {
+          "source_no": 22,
+          "name": "KUKULUBAN",
+          "leader_name": "MG UJANG ENDUT,MG ADE CIBUNGUR",
+          "leader_phone": "085860916399",
+          "notes": "",
+          "sort_order": 22,
+          "source_row": 24
+        },
+        {
+          "source_no": 23,
+          "name": "SUSUGUH UMUM",
+          "leader_name": "MG ZAKI",
+          "leader_phone": "085724769233",
+          "notes": "",
+          "sort_order": 23,
+          "source_row": 25
+        },
+        {
+          "source_no": 24,
+          "name": "STOKIS SAYURAN",
+          "leader_name": "MG WIRMAN",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 24,
+          "source_row": 26
+        },
+        {
+          "source_no": 25,
+          "name": "PISANG",
+          "leader_name": "PA ENDANG",
+          "leader_phone": "083138163590",
+          "notes": "",
+          "sort_order": 25,
+          "source_row": 27
+        }
+      ]
+    },
+    {
+      "name": "PERASMANAN",
+      "sort_order": 5,
+      "coordinators": [
+        {
+          "name": "FATAH",
+          "phone": "085723341835",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 26,
+          "name": "PERASMANAN UMUM",
+          "leader_name": "A DEDE",
+          "leader_phone": "085863660008",
+          "notes": "",
+          "sort_order": 26,
+          "source_row": 28
+        },
+        {
+          "source_no": 27,
+          "name": "RARAT PIRING",
+          "leader_name": "MG YANA/MG NCEM",
+          "leader_phone": "083835536200",
+          "notes": "",
+          "sort_order": 27,
+          "source_row": 29
+        },
+        {
+          "source_no": 28,
+          "name": "CUCI PIRING",
+          "leader_name": "MG JONAS",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 28,
+          "source_row": 30
+        }
+      ]
+    },
+    {
+      "name": "LOGISTIK",
+      "sort_order": 6,
+      "coordinators": [
+        {
+          "name": "ABIL",
+          "phone": "085536618509",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 29,
+          "name": "PENYEDIA BARANG /ALAT MASAK",
+          "leader_name": "CEP AANG & RIAD",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 29,
+          "source_row": 31
+        },
+        {
+          "source_no": 30,
+          "name": "TABUNG LPG",
+          "leader_name": "BADRI",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 30,
+          "source_row": 32
+        },
+        {
+          "source_no": 31,
+          "name": "PEMBELANJAAN",
+          "leader_name": "MG AFIF",
+          "leader_phone": "083830178380",
+          "notes": "",
+          "sort_order": 31,
+          "source_row": 33
+        },
+        {
+          "source_no": 32,
+          "name": "STOKIS BUMBU",
+          "leader_name": "MG SEM",
+          "leader_phone": "087878348686",
+          "notes": "",
+          "sort_order": 32,
+          "source_row": 34
+        },
+        {
+          "source_no": 33,
+          "name": "KELONTONG",
+          "leader_name": "ABIL",
+          "leader_phone": "085536618509",
+          "notes": "",
+          "sort_order": 33,
+          "source_row": 35
+        },
+        {
+          "source_no": 34,
+          "name": "TIM ANGKUT",
+          "leader_name": "ADAM REZA",
+          "leader_phone": "082147220603",
+          "notes": "",
+          "sort_order": 34,
+          "source_row": 36
+        }
+      ]
+    },
+    {
+      "name": "SUSUGUH",
+      "sort_order": 7,
+      "coordinators": [
+        {
+          "name": "MG AAB",
+          "phone": "085781856313",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 35,
+          "name": "DM",
+          "leader_name": "KAKA MAMAD & A SOFWAN",
+          "leader_phone": "085862051677",
+          "notes": "",
+          "sort_order": 35,
+          "source_row": 37
+        },
+        {
+          "source_no": 36,
+          "name": "LANTAI 4",
+          "leader_name": "REVAN",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 36,
+          "source_row": 38
+        },
+        {
+          "source_no": 37,
+          "name": "BUMI BAH YAI Jakarta",
+          "leader_name": "YUDA & MG SURYANA",
+          "leader_phone": "083183775223",
+          "notes": "",
+          "sort_order": 37,
+          "source_row": 39
+        },
+        {
+          "source_no": 38,
+          "name": "DR",
+          "leader_name": "FARHAN ARAB",
+          "leader_phone": "085781186722",
+          "notes": "",
+          "sort_order": 38,
+          "source_row": 40
+        },
+        {
+          "source_no": 39,
+          "name": "BALE TAMU",
+          "leader_name": "/AGNI/NURSIDIN OCID",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 39,
+          "source_row": 41
+        },
+        {
+          "source_no": 40,
+          "name": "BALE MAKAN (PERASMANAN KHUSUS)",
+          "leader_name": "MG NANCE",
+          "leader_phone": "08156267704 / 087870847739",
+          "notes": "",
+          "sort_order": 40,
+          "source_row": 42
+        },
+        {
+          "source_no": 41,
+          "name": "BUMI AKANG",
+          "leader_name": "MG AZIZ",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 41,
+          "source_row": 43
+        },
+        {
+          "source_no": 42,
+          "name": "BUMI UMI",
+          "leader_name": "A HAZIM TEH NDEY & SULAIMAN",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 42,
+          "source_row": 44
+        },
+        {
+          "source_no": 43,
+          "name": "RUANGAN ABAH HABIB",
+          "leader_name": "A UJANG & MANBA",
+          "leader_phone": "08389914499 / 085859955550",
+          "notes": "",
+          "sort_order": 43,
+          "source_row": 45
+        },
+        {
+          "source_no": 44,
+          "name": "PANGGUNG",
+          "leader_name": "A MUNIF",
+          "leader_phone": "081994781867",
+          "notes": "",
+          "sort_order": 44,
+          "source_row": 46
+        }
+      ]
+    },
+    {
+      "name": "DAPUR UMUM",
+      "sort_order": 8,
+      "coordinators": [
+        {
+          "name": "MG ABUY",
+          "phone": "085771174660",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 45,
+          "name": "KUPAS KELAPA",
+          "leader_name": "MG MUS",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 45,
+          "source_row": 47
+        },
+        {
+          "source_no": 46,
+          "name": "GILING BUMBU",
+          "leader_name": "MG ASEP HEBED",
+          "leader_phone": "085216216918",
+          "notes": "",
+          "sort_order": 46,
+          "source_row": 48
+        },
+        {
+          "source_no": 47,
+          "name": "KULUB ENDOG",
+          "leader_name": "MG SA'IDE",
+          "leader_phone": "085320329788",
+          "notes": "",
+          "sort_order": 47,
+          "source_row": 49
+        },
+        {
+          "source_no": 48,
+          "name": "SULUH",
+          "leader_name": "RIAN JABON & FAHMI",
+          "leader_phone": "083870793611 / 0895415593724",
+          "notes": "",
+          "sort_order": 48,
+          "source_row": 50
+        },
+        {
+          "source_no": 49,
+          "name": "NASI",
+          "leader_name": "MIFTAH",
+          "leader_phone": "083192652249",
+          "notes": "",
+          "sort_order": 49,
+          "source_row": 51
+        },
+        {
+          "source_no": 50,
+          "name": "PENGGORENGAN",
+          "leader_name": "MG EWOK",
+          "leader_phone": "081574941479",
+          "notes": "",
+          "sort_order": 50,
+          "source_row": 52
+        },
+        {
+          "source_no": 51,
+          "name": "STOKIS PRASMANAN UMUM",
+          "leader_name": "MG BAHAR",
+          "leader_phone": "085882148399",
+          "notes": "",
+          "sort_order": 51,
+          "source_row": 53
+        },
+        {
+          "source_no": 52,
+          "name": "MASAK SAYUR",
+          "leader_name": "PA HANS",
+          "leader_phone": "087763603579",
+          "notes": "",
+          "sort_order": 52,
+          "source_row": 54
+        },
+        {
+          "source_no": 53,
+          "name": "GEGEROH DAPUR UMUM",
+          "leader_name": "MG HAMID",
+          "leader_phone": "085720789035",
+          "notes": "",
+          "sort_order": 53,
+          "source_row": 55
+        },
+        {
+          "source_no": 54,
+          "name": "DAPUR UMI",
+          "leader_name": "MG UJANG",
+          "leader_phone": "0882002616767",
+          "notes": "",
+          "sort_order": 54,
+          "source_row": 56
+        }
+      ]
+    },
+    {
+      "name": "PERDAGINGAN",
+      "sort_order": 9,
+      "coordinators": [
+        {
+          "name": "UMMAH",
+          "phone": "",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 55,
+          "name": "PEMBERSIH JEROAN,KULIT & IKAN",
+          "leader_name": "MG APOY & MG NURDIN",
+          "leader_phone": "083893643864",
+          "notes": "",
+          "sort_order": 55,
+          "source_row": 57
+        },
+        {
+          "source_no": 56,
+          "name": "KULUB DAGING",
+          "leader_name": "RIZAL ALKON",
+          "leader_phone": "083172445823",
+          "notes": "",
+          "sort_order": 56,
+          "source_row": 58
+        },
+        {
+          "source_no": 57,
+          "name": "GEPUK",
+          "leader_name": "WA AI",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 57,
+          "source_row": 59
+        }
+      ]
+    },
+    {
+      "name": "PERBESEKAN",
+      "sort_order": 10,
+      "coordinators": [
+        {
+          "name": "H.RIDWAN ( GAWONG )",
+          "phone": "087778927706",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 58,
+          "name": "BESEK PULANG",
+          "leader_name": "SATGAS",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 58,
+          "source_row": 60
+        },
+        {
+          "source_no": 59,
+          "name": "BESEK KOTAK (STYROFOAM)",
+          "leader_name": "MG USEP BANDUNG",
+          "leader_phone": "081248904600",
+          "notes": "",
+          "sort_order": 59,
+          "source_row": 61
+        },
+        {
+          "source_no": 60,
+          "name": "PACKING BESEK SNACK",
+          "leader_name": "MG NIA",
+          "leader_phone": "085222321201",
+          "notes": "",
+          "sort_order": 60,
+          "source_row": 62
+        },
+        {
+          "source_no": 61,
+          "name": "PACKING BESEK TINWOAL",
+          "leader_name": "MG ACENG NAGREK",
+          "leader_phone": "085215662893",
+          "notes": "",
+          "sort_order": 61,
+          "source_row": 63
+        },
+        {
+          "source_no": 62,
+          "name": "PEMBAGIAN BESEK PULANG",
+          "leader_name": "SATGAS",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 62,
+          "source_row": 64
+        },
+        {
+          "source_no": 63,
+          "name": "PEMBAGIAN BESEK MAKAN",
+          "leader_name": "SATGAS",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 63,
+          "source_row": 65
+        }
+      ]
+    },
+    {
+      "name": "KEBERSIHAN",
+      "sort_order": 11,
+      "coordinators": [
+        {
+          "name": "JAMAR",
+          "phone": "",
+          "notes": "",
+          "sort_order": 1
+        }
+      ],
+      "divisions": [
+        {
+          "source_no": 64,
+          "name": "DAPUR UMUM",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 64,
+          "source_row": 66
+        },
+        {
+          "source_no": 65,
+          "name": "HALAMAN BUMI UMI",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 65,
+          "source_row": 67
+        },
+        {
+          "source_no": 66,
+          "name": "HALAMAN DARMIS DAN BALE TAMU",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 66,
+          "source_row": 68
+        },
+        {
+          "source_no": 67,
+          "name": "MAJLIS DAN HALAMAN SEKITARNYA",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 67,
+          "source_row": 69
+        },
+        {
+          "source_no": 68,
+          "name": "MAKBAROH DAN HALMAN BUMI AKANG",
+          "leader_name": "bang lay",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 68,
+          "source_row": 70
+        },
+        {
+          "source_no": 69,
+          "name": "LAPANGAN",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 69,
+          "source_row": 71
+        },
+        {
+          "source_no": 70,
+          "name": "MASJID",
+          "leader_name": "",
+          "leader_phone": "",
+          "notes": "",
+          "sort_order": 70,
+          "source_row": 72
+        },
+        {
+          "source_no": 71,
+          "name": "TOILET",
+          "leader_name": "YAYAN",
+          "leader_phone": "083875170447",
+          "notes": "",
+          "sort_order": 71,
+          "source_row": 73
+        }
+      ]
+    }
+  ]
+}

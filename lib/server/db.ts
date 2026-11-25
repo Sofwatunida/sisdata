@@ -53,6 +53,8 @@ declare global {
 function freshLocal(): Database {
   const seedData = JSON.parse(fs.readFileSync(path.join(process.cwd(), "data", "seed.json"), "utf8")) as Database;
   const db = JSON.parse(JSON.stringify(seedData)) as Database;
+  db.bidangs ||= [];
+  db.bidang_coordinators ||= [];
   db.profiles = defaultProfiles();
   db.operator_permissions = [
     {
@@ -81,6 +83,8 @@ function local(): Database {
     if (fs.existsSync(DB_FILE)) {
       try {
         globalThis.__personnelDb = JSON.parse(fs.readFileSync(DB_FILE, "utf8")) as Database;
+        globalThis.__personnelDb.bidangs ||= [];
+        globalThis.__personnelDb.bidang_coordinators ||= [];
       } catch {
         globalThis.__personnelDb = freshLocal();
       }
@@ -204,8 +208,9 @@ export async function removeWhere(table: TableName, predicate: (row: Record<stri
 
 export async function snapshot(): Promise<Record<string, unknown[]>> {
   const tables: TableName[] = [
-    "periods", "profiles", "master_data", "divisions", "personnel", "assignments", "supervisors",
-    "work_assignments", "operator_permissions", "activity_logs", "import_batches", "import_rows", "settings",
+    "periods", "profiles", "master_data", "bidangs", "bidang_coordinators", "divisions", "personnel",
+    "assignments", "supervisors", "work_assignments", "operator_permissions", "activity_logs",
+    "import_batches", "import_rows", "settings",
   ];
   const out: Record<string, unknown[]> = {};
   for (const t of tables) out[t] = await all(t);
@@ -219,8 +224,9 @@ export async function restoreSnapshot(snap: Record<string, unknown[]>): Promise<
     return;
   }
   const tables: TableName[] = [
-    "periods", "profiles", "master_data", "divisions", "personnel", "assignments", "supervisors",
-    "work_assignments", "operator_permissions", "activity_logs", "import_batches", "import_rows", "settings",
+    "periods", "profiles", "master_data", "bidangs", "bidang_coordinators", "divisions", "personnel",
+    "assignments", "supervisors", "work_assignments", "operator_permissions", "activity_logs",
+    "import_batches", "import_rows", "settings",
   ];
   const db = local();
   for (const t of tables) {

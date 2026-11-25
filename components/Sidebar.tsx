@@ -6,14 +6,16 @@ import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import {
   Activity, BarChart3, Boxes, ChevronLeft, Database, Download, FileClock, LayoutDashboard,
-  ListChecks, Menu, Settings, ShieldCheck, Users, X, CalendarRange,
+  ListChecks, Menu, Search, Settings, ShieldCheck, Users, X, CalendarRange, Layers3,
 } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/personnel", label: "Data Personil", icon: Users },
+  { href: "/bidangs", label: "Bidang & Divisi", icon: Layers3 },
   { href: "/divisions", label: "Bagian / Divisi", icon: Boxes },
+  { href: "/search", label: "Pencarian Global", icon: Search },
   { href: "/periods", label: "Periode / Acara", icon: CalendarRange },
   { href: "/supervision", label: "Data Pengawasan", icon: ShieldCheck },
   { href: "/reports", label: "Rekapitulasi", icon: BarChart3 },

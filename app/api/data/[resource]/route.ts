@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { all, insert, nextCode, uid } from "@/lib/server/db";
 import { can, getSession, logActivity } from "@/lib/server/auth";
-import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, isResource, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
+import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, canAccessBidang, isResource, scopedBidangIds, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
-import type { ActivityLog, Division, Personnel } from "@/lib/types";
+import type { Bidang, Division, Personnel } from "@/lib/types";
 import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +23,9 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ resource: s
     const q = (params.get("q") || "").toLowerCase();
 
     const allowedDivisions = await scopedDivisionIds(session, periodId || undefined);
+    const allowedBidangs = await scopedBidangIds(session, periodId || undefined);
+    if (resource === "bidangs" && allowedBidangs) rows = rows.filter((r) => allowedBidangs.includes(String(r.id)));
+    if (resource === "bidang_coordinators" && allowedBidangs) rows = rows.filter((r) => allowedBidangs.includes(String(r.bidang_id || "")));
     if (resource === "personnel" && allowedDivisions) {
       const assignments = await all<{ personnel_id: string; division_id: string; status: string }>("assignments");
       const ids = new Set(assignments.filter((a) => allowedDivisions.includes(a.division_id)).map((a) => a.personnel_id));
@@ -30,7 +33,7 @@ export async function GET(req: NextRequest, ctx: { params: Promise<{ resource: s
     }
     if (resource === "divisions" && allowedDivisions) rows = rows.filter((r) => allowedDivisions.includes(String(r.id)));
     if (resource === "assignments" && allowedDivisions) rows = rows.filter((r) => allowedDivisions.includes(String(r.division_id)));
-    if (periodId && ["divisions", "assignments", "supervisors", "work_assignments"].includes(resource)) {
+    if (periodId && ["bidangs", "divisions", "assignments", "supervisors", "work_assignments"].includes(resource)) {
       rows = rows.filter((r) => r.period_id === periodId);
     }
     if (divisionId && resource === "assignments") rows = rows.filter((r) => r.division_id === divisionId);
@@ -65,7 +68,18 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
     if (resource === "personnel" || resource === "assignments") {
       const divisionId = String(body.division_id || "");
       if (divisionId && !(await can(session, "create", { divisionId, periodId: String(body.period_id || "") }))) throw new Error("FORBIDDEN");
-    } else if (!(await can(session, resource === "divisions" ? "edit" : "create"))) throw new Error("FORBIDDEN");
+    } else if (resource === "bidangs") {
+      if (!(await can(session, "edit"))) throw new Error("FORBIDDEN");
+    } else if (resource === "bidang_coordinators") {
+      const bidangId = String(body.bidang_id || "");
+      if (!bidangId || !(await canAccessBidang(session, bidangId, "edit"))) throw new Error("FORBIDDEN");
+    } else if (resource === "divisions") {
+      const bidangId = String(body.bidang_id || "");
+      const allowed = bidangId
+        ? await canAccessBidang(session, bidangId, "edit")
+        : await can(session, "edit");
+      if (!allowed) throw new Error("FORBIDDEN");
+    } else if (!(await can(session, "create"))) throw new Error("FORBIDDEN");
 
     const payload: Record<string, unknown> = { ...body, id: typeof body.id === "string" && body.id ? body.id : uid() };
     if (resource === "personnel") {
@@ -83,6 +97,32 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
       if (!name) return fail("Nama periode wajib diisi");
       payload.name = name;
     }
+    if (resource === "bidangs") {
+      const name = String(payload.name || "").trim().replace(/\s+/g, " ");
+      if (!name) return fail("Nama bidang wajib diisi");
+      payload.name = name;
+      if (payload.period_id) payload.period_id = String(payload.period_id);
+      else delete payload.period_id;
+      payload.notes = String(payload.notes || "");
+      payload.sort_order = Number(payload.sort_order) || 0;
+      const bidangs = await all<Bidang>("bidangs");
+      const periodId = String(payload.period_id || "");
+      if (bidangs.some((b) => String(b.period_id || "") === periodId && b.name.toLowerCase() === name.toLowerCase())) {
+        return fail(`Bidang "${name}" sudah terdaftar pada periode ini.`, 409);
+      }
+    }
+    if (resource === "bidang_coordinators") {
+      const bidangId = String(payload.bidang_id || "");
+      if (!bidangId) return fail("Bidang wajib dipilih");
+      payload.bidang_id = bidangId;
+      payload.name = String(payload.name || "");
+      payload.phone = String(payload.phone || "");
+      payload.notes = String(payload.notes || "");
+      payload.is_active = payload.is_active !== false;
+      payload.sort_order = Number(payload.sort_order) || 0;
+      if (payload.personnel_id) payload.personnel_id = String(payload.personnel_id);
+      else delete payload.personnel_id;
+    }
     if (resource === "divisions") {
       const name = normalizeDivisionName(String(payload.name || ""));
       if (!name) return fail("Nama bagian wajib diisi");
@@ -90,7 +130,13 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
       if (payload.period_id) payload.period_id = String(payload.period_id);
       else delete payload.period_id;
       payload.is_active = payload.is_active !== false;
+      payload.is_archived = payload.is_archived === true;
       payload.required_count = Number(payload.required_count) || 0;
+      payload.leader_phone = String(payload.leader_phone || "");
+      if (payload.bidang_id) payload.bidang_id = String(payload.bidang_id);
+      else delete payload.bidang_id;
+      if (payload.leader_personnel_id) payload.leader_personnel_id = String(payload.leader_personnel_id);
+      else delete payload.leader_personnel_id;
 
       const divisions = await all<Division>("divisions");
       const periodId = String(payload.period_id || "");
@@ -112,6 +158,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
       action: "tambah",
       entity_type: resource,
       entity_id: String(created.id),
+      bidang_id: String(body.bidang_id || (resource === "bidangs" ? created.id : "")),
       division_id: String(body.division_id || (resource === "divisions" ? created.id : "")),
       period_id: String(body.period_id || ""),
       description: `Menambahkan data ${resource}: ${String(body.full_name || body.name || body.username || created.id)}`,

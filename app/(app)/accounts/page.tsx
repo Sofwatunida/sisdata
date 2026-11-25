@@ -14,7 +14,7 @@ const PERMISSION_KEYS = [
 ] as const;
 
 export default function AccountsPage() {
-  const { periods, divisions } = useApp();
+  const { periods, bidangs, divisions } = useApp();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [permissions, setPermissions] = useState<OperatorPermission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +22,7 @@ export default function AccountsPage() {
   const [permOpen, setPermOpen] = useState<Profile | null>(null);
   const [passOpen, setPassOpen] = useState<Profile | null>(null);
   const [newAccount, setNewAccount] = useState({ username: "", email: "", full_name: "", password: "", role: "operator" });
-  const [scope, setScope] = useState<Record<string, unknown>>({ division_id: "", period_id: "" });
+  const [scope, setScope] = useState<Record<string, unknown>>({ division_id: "", bidang_id: "", period_id: "" });
   const [passwords, setPasswords] = useState({ current_password: "", password: "" });
 
   const load = async () => {
@@ -98,7 +98,7 @@ export default function AccountsPage() {
                   <div className="mt-3 flex flex-wrap items-center gap-2">
                     <button className="icon-btn border border-slate-200" title="Ubah username" aria-label="Ubah username" onClick={() => void rename()}><Pencil className="h-4 w-4" /></button>
                     <button className="icon-btn border border-slate-200" title="Ubah email" aria-label="Ubah email" onClick={() => void remail()}><Mail className="h-4 w-4" /></button>
-                    {p.role === "operator" && <button className="icon-btn border border-slate-200 !text-navy-700" title="Hak akses" aria-label="Hak akses" onClick={() => { setPermOpen(p); setScope({ division_id: perms[0]?.division_id || "", period_id: perms[0]?.period_id || "", ...(perms[0] || {}) }); }}><ShieldCheck className="h-4 w-4" /></button>}
+                    {p.role === "operator" && <button className="icon-btn border border-slate-200 !text-navy-700" title="Hak akses" aria-label="Hak akses" onClick={() => { setPermOpen(p); setScope({ division_id: perms[0]?.division_id || "", bidang_id: perms[0]?.bidang_id || "", period_id: perms[0]?.period_id || "", ...(perms[0] || {}) }); }}><ShieldCheck className="h-4 w-4" /></button>}
                     <button className="icon-btn border border-slate-200" title="Ganti password" aria-label="Ganti password" onClick={() => setPassOpen(p)}><KeyRound className="h-4 w-4" /></button>
                     {p.username !== "admin" && <button className="btn-secondary ml-auto !py-1.5 !text-xs !text-rose-600" onClick={async () => { if (await confirmDialog(`${p.is_active ? "Nonaktifkan" : "Aktifkan"} akun ${p.username}?`)) await toggleActive(p); }}>{p.is_active ? "Nonaktifkan" : "Aktifkan"}</button>}
                   </div>
@@ -129,7 +129,7 @@ export default function AccountsPage() {
                       if (!email || email === p.email) return;
                       try { await patch(`/api/data/profiles/${p.id}`, { email }); toast("Email diperbarui"); await load(); } catch (e) { toast((e as Error).message, "error"); }
                     }}><Mail className="h-4 w-4" /></button>
-                    {p.role === "operator" && <button className="icon-btn !text-navy-700 hover:!bg-navy-50" title="Hak akses" onClick={() => { setPermOpen(p); setScope({ division_id: perms[0]?.division_id || "", period_id: perms[0]?.period_id || "", ...(perms[0] || {}) }); }}><ShieldCheck className="h-4 w-4" /></button>}
+                    {p.role === "operator" && <button className="icon-btn !text-navy-700 hover:!bg-navy-50" title="Hak akses" onClick={() => { setPermOpen(p); setScope({ division_id: perms[0]?.division_id || "", bidang_id: perms[0]?.bidang_id || "", period_id: perms[0]?.period_id || "", ...(perms[0] || {}) }); }}><ShieldCheck className="h-4 w-4" /></button>}
                     <button className="icon-btn" title="Ganti password" onClick={() => setPassOpen(p)}><KeyRound className="h-4 w-4" /></button>
                     {p.username !== "admin" && <button className="min-h-[44px] text-xs font-medium text-rose-600 hover:underline lg:min-h-0" onClick={async () => { if (await confirmDialog(`${p.is_active ? "Nonaktifkan" : "Aktifkan"} akun ${p.username}?`)) await toggleActive(p); }}>{p.is_active ? "Nonaktifkan" : "Aktifkan"}</button>}
                   </td>
@@ -152,10 +152,12 @@ export default function AccountsPage() {
       </Modal>
 
       <Modal open={Boolean(permOpen)} onClose={() => setPermOpen(null)} title={`Hak Akses · ${permOpen?.username || ""}`}>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Cakupan bidang"><select className="input" value={String(scope.bidang_id || "")} onChange={(e) => setScope({ ...scope, bidang_id: e.target.value })}><option value="">Seluruh bidang</option>{bidangs.map((b) => <option key={b.id} value={b.id}>{b.name}{periods.find((p) => p.id === b.period_id) ? ` · ${periods.find((p) => p.id === b.period_id)?.name}` : ""}</option>)}</select></Field>
           <Field label="Cakupan bagian"><select className="input" value={String(scope.division_id || "")} onChange={(e) => setScope({ ...scope, division_id: e.target.value })}><option value="">Seluruh bagian</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
           <Field label="Cakupan periode"><select className="input" value={String(scope.period_id || "")} onChange={(e) => setScope({ ...scope, period_id: e.target.value })}><option value="">Semua periode</option>{periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
         </div>
+        <p className="mt-2 text-xs text-slate-500">Jika bidang dipilih, operator mewarisi akses ke seluruh divisi di bidang tersebut.</p>
         <p className="mb-2 mt-4 text-sm font-semibold text-navy-900">Izin yang diberikan</p>
         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {PERMISSION_KEYS.map(([key, label]) => <label key={key} className="flex min-h-[44px] cursor-pointer items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700"><input type="checkbox" className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" checked={Boolean(scope[key])} onChange={(e) => setScope({ ...scope, [key]: e.target.checked })} /> {label}</label>)}

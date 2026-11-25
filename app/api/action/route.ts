@@ -1,11 +1,13 @@
 import { NextRequest } from "next/server";
 import fs from "node:fs";
 import path from "node:path";
-import { all, bulkInsert, find, insert, nextCode, patch, remove, removeAll, restoreSnapshot, snapshot, supabaseEnabled, uid } from "@/lib/server/db";
+import { all, bulkInsert, find, insert, nextCode, patch, remove, removeAll, restoreSnapshot, setSetting, snapshot, supabaseEnabled, uid } from "@/lib/server/db";
 import { can, getSession, logActivity, createProfile, updateProfilePassword, verifyProfilePassword } from "@/lib/server/auth";
 import { canAccessDivision } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
-import type { Assignment, Division, ImportBatch, Personnel, Period, Profile } from "@/lib/types";
+import type { Assignment, Bidang, BidangCoordinator, Division, ImportBatch, Personnel, Period, Profile } from "@/lib/types";
+import { findLinkedPersonnel } from "@/lib/server/personnel-link";
+import { normalizeDivisionName } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -112,10 +114,34 @@ export async function POST(req: NextRequest) {
         description: `Disalin dari ${source.name}`,
       });
       let copied = 0;
+      const bidangMap = new Map<string, string>();
+      const sourceBidangs = (await all<Bidang>("bidangs")).filter((b) => b.period_id === sourcePeriodId);
+      for (const b of sourceBidangs) {
+        const created = await insert<Bidang>("bidangs", { ...b, id: uid(), period_id: newId, created_at: new Date().toISOString(), updated_at: undefined });
+        bidangMap.set(b.id, String(created.id));
+        const coordinators = (await all<BidangCoordinator>("bidang_coordinators")).filter((c) => c.bidang_id === b.id);
+        for (const c of coordinators) {
+          await insert("bidang_coordinators", { ...c, id: uid(), bidang_id: created.id, created_at: new Date().toISOString() });
+        }
+      }
       if (p.copy_divisions !== false) {
         const divisions = (await all<Division>("divisions")).filter((d) => d.period_id === sourcePeriodId);
         for (const d of divisions) {
-          await insert("divisions", { ...d, id: uid(), period_id: newId, required_count: p.copy_requirements === false ? 0 : d.required_count, leader_name: p.copy_leaders === false ? "" : d.leader_name, coordinator_name: p.copy_leaders === false ? "" : d.coordinator_name, source_sheet: "", created_at: undefined });
+          await insert("divisions", {
+            ...d,
+            id: uid(),
+            period_id: newId,
+            bidang_id: d.bidang_id ? bidangMap.get(d.bidang_id) || null : null,
+            required_count: p.copy_requirements === false ? 0 : d.required_count,
+            leader_name: p.copy_leaders === false ? "" : d.leader_name,
+            leader_personnel_id: p.copy_leaders === false ? null : d.leader_personnel_id || null,
+            leader_phone: p.copy_leaders === false ? "" : d.leader_phone,
+            coordinator_name: p.copy_leaders === false ? "" : d.coordinator_name,
+            is_archived: false,
+            archived_at: undefined,
+            source_sheet: "",
+            created_at: undefined,
+          });
           copied++;
         }
       }
@@ -245,6 +271,7 @@ export async function POST(req: NextRequest) {
           id: uid(),
           profile_id: profileId,
           period_id: String(scope.period_id || "") || undefined,
+          bidang_id: String(scope.bidang_id || "") || undefined,
           division_id: String(scope.division_id || "") || undefined,
           can_view: Boolean(scope.can_view),
           can_create: Boolean(scope.can_create),
@@ -276,6 +303,136 @@ export async function POST(req: NextRequest) {
       }
       await logActivity({ actor: session, action: "import", entity_type: "import", description: `Import data awal spreadsheet (${total} baris)` });
       return ok({ data: { imported: total } });
+    }
+
+    if (action === "import_organization_structure") {
+      if (session.role !== "admin") throw new Error("FORBIDDEN");
+      const sourcePath = path.join(process.cwd(), "data", "haul-2026-structure.json");
+      if (!fs.existsSync(sourcePath)) throw new Error("File struktur organisasi tidak ditemukan");
+      const structure = JSON.parse(fs.readFileSync(sourcePath, "utf8")) as {
+        period: { name: string; year: string; status: string; description: string; source_file: string };
+        source_file: string;
+        source_sheet: string;
+        fields: {
+          name: string;
+          sort_order: number;
+          coordinators: { name: string; phone: string; notes: string; sort_order: number }[];
+          divisions: { name: string; leader_name: string; leader_phone: string; notes: string; sort_order: number; source_row: number }[];
+        }[];
+      };
+
+      const periods = await all<Period>("periods");
+      let period = periods.find((x) => x.name === structure.period.name);
+      if (!period) {
+        period = await insert<Period>("periods", {
+          id: uid(),
+          name: structure.period.name,
+          year: structure.period.year,
+          start_date: "",
+          end_date: "",
+          status: structure.period.status === "aktif" ? "aktif" : "draft",
+          description: structure.period.description,
+          source_file: structure.period.source_file,
+        });
+      }
+      const periodId = String(period.id);
+      const existingBidangs = (await all<Bidang>("bidangs")).filter((b) => b.period_id === periodId);
+      const existingDivisions = (await all<Division>("divisions")).filter((d) => d.period_id === periodId);
+      if (existingBidangs.length || existingDivisions.length) {
+        return ok({
+          data: {
+            period,
+            bidangs: existingBidangs.length,
+            coordinators: (await all<BidangCoordinator>("bidang_coordinators")).filter((c) => existingBidangs.some((b) => b.id === c.bidang_id)).length,
+            divisions: existingDivisions.length,
+            linkedPersonnel: 0,
+            activated: false,
+            existing: true,
+          },
+        });
+      }
+
+      let linkedPersonnel = 0;
+      let coordinatorCount = 0;
+      let divisionCount = 0;
+      let codeNumber = Number(String(await nextCode("divisions", "DIV", 3)).split("-")[1]) || 1;
+      const sourceFile = structure.source_file || structure.period.source_file;
+
+      for (const field of structure.fields) {
+        const bidang = await insert<Bidang>("bidangs", {
+          id: uid(),
+          period_id: periodId,
+          name: normalizeDivisionName(field.name),
+          notes: "",
+          sort_order: Number(field.sort_order) || 0,
+          source_file: sourceFile,
+          source_sheet: structure.source_sheet,
+          created_at: new Date().toISOString(),
+        });
+        const bidangId = String(bidang.id);
+        let primaryCoordinator = "";
+        for (const coordinator of field.coordinators || []) {
+          const name = String(coordinator.name || "");
+          const phone = String(coordinator.phone || "");
+          const personnelId = await findLinkedPersonnel(name, phone);
+          if (personnelId) linkedPersonnel++;
+          if (!primaryCoordinator && name) primaryCoordinator = name;
+          await insert<BidangCoordinator>("bidang_coordinators", {
+            id: uid(),
+            bidang_id: bidangId,
+            personnel_id: personnelId || null,
+            name,
+            phone,
+            notes: String(coordinator.notes || ""),
+            sort_order: Number(coordinator.sort_order) || 0,
+            is_active: true,
+            created_at: new Date().toISOString(),
+          });
+          coordinatorCount++;
+        }
+        for (const division of field.divisions || []) {
+          const leaderName = String(division.leader_name || "");
+          const leaderPhone = String(division.leader_phone || "");
+          const leaderPersonnelId = await findLinkedPersonnel(leaderName, leaderPhone);
+          if (leaderPersonnelId) linkedPersonnel++;
+          await insert<Division>("divisions", {
+            id: uid(),
+            period_id: periodId,
+            bidang_id: bidangId,
+            code: `DIV-${String(codeNumber++).padStart(3, "0")}`,
+            name: normalizeDivisionName(division.name),
+            leader_name: leaderName,
+            leader_personnel_id: leaderPersonnelId || null,
+            leader_phone: leaderPhone,
+            coordinator_name: primaryCoordinator,
+            required_count: 0,
+            notes: String(division.notes || ""),
+            sort_order: Number(division.sort_order) || 0,
+            source_file: sourceFile,
+            source_sheet: structure.source_sheet,
+            source_row: Number(division.source_row) || 0,
+            is_active: true,
+            is_archived: false,
+          });
+          divisionCount++;
+        }
+      }
+
+      let activated = false;
+      if (p.activate !== false) {
+        await setSetting("active_period_id", periodId);
+        activated = true;
+      }
+      await logActivity({
+        actor: session,
+        action: "import_struktur",
+        entity_type: "periods",
+        entity_id: periodId,
+        period_id: periodId,
+        description: `Import struktur ${structure.period.name}: ${structure.fields.length} bidang, ${coordinatorCount} koordinator, ${divisionCount} divisi`,
+        after_data: { bidangs: structure.fields.length, coordinators: coordinatorCount, divisions: divisionCount, linkedPersonnel },
+      });
+      return ok({ data: { period, bidangs: structure.fields.length, coordinators: coordinatorCount, divisions: divisionCount, linkedPersonnel, activated, existing: false } });
     }
 
     if (action === "check_duplicates") {

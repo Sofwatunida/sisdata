@@ -42,21 +42,51 @@ export interface Personnel {
   updated_at?: string;
 }
 
+export interface Bidang {
+  id: string;
+  period_id: string;
+  name: string;
+  notes?: string;
+  sort_order?: number;
+  source_file?: string;
+  source_sheet?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BidangCoordinator {
+  id: string;
+  bidang_id: string;
+  personnel_id?: string;
+  name: string;
+  phone?: string;
+  notes?: string;
+  sort_order?: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
 export interface Division {
   id: string;
   period_id: string;
+  bidang_id?: string;
   code: string;
   name: string;
   alias?: string;
   category?: string;
   leader_name?: string;
+  leader_personnel_id?: string;
+  leader_phone?: string;
   coordinator_name?: string;
   required_count: number;
   notes?: string;
   sort_order?: number;
   source_file?: string;
   source_sheet?: string;
+  source_row?: number;
   is_active: boolean;
+  is_archived?: boolean;
+  archived_at?: string;
 }
 
 export interface Assignment {
@@ -112,6 +142,7 @@ export interface OperatorPermission {
   id: string;
   profile_id: string;
   period_id?: string;
+  bidang_id?: string;
   division_id?: string;
   can_view: boolean;
   can_create: boolean;
@@ -143,6 +174,7 @@ export interface ActivityLog {
   entity_type: string;
   entity_id: string;
   period_id?: string;
+  bidang_id?: string;
   division_id?: string;
   before_data?: unknown;
   after_data?: unknown;
@@ -192,6 +224,8 @@ export interface Database {
   periods: Period[];
   profiles: Profile[];
   master_data: MasterData[];
+  bidangs: Bidang[];
+  bidang_coordinators: BidangCoordinator[];
   divisions: Division[];
   personnel: Personnel[];
   assignments: Assignment[];
@@ -214,4 +248,18 @@ export interface DivisionStat {
   required: number;
   lacking: number;
   excess: number;
+}
+
+export interface SearchResult {
+  type: "bidang" | "koordinator" | "divisi" | "ketua_divisi" | "personil" | "telepon";
+  label: string;
+  detail: string;
+  period_id: string;
+  bidang_id: string;
+  division_id: string;
+  personnel_id: string;
+  period_name: string;
+  bidang_name: string;
+  division_name: string;
+  href: string;
 }

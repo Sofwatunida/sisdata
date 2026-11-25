@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { CalendarRange, Copy, Pencil, Plus } from "lucide-react";
+import { CalendarRange, Copy, Pencil, Plus, Upload } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api, post } from "@/lib/client/api";
 import { Badge, Field, Modal, PageHeader, confirmDialog, toast } from "@/components/ui";
 import { formatDate } from "@/lib/utils";
 
 export default function PeriodsPage() {
-  const { user, periods, activePeriodId, setActivePeriodId, refresh, divisions } = useApp();
+  const { user, periods, bidangs, activePeriodId, setActivePeriodId, refresh, divisions } = useApp();
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState("");
   const [editing, setEditing] = useState("");
@@ -79,19 +79,23 @@ export default function PeriodsPage() {
 
   return (
     <div>
-      <PageHeader title="Periode / Acara" description="Setiap periode memiliki data divisi, kebutuhan, dan penugasan tersendiri"
-        actions={<button className="btn-primary" onClick={openNew}><Plus className="h-4 w-4" /> Periode Baru</button>} />
+      <PageHeader title="Periode / Acara" description="Setiap periode memiliki data bidang, divisi, kebutuhan, dan penugasan tersendiri"
+        actions={<>
+          {user?.role === "admin" && <Link href="/import-export" className="btn-secondary"><Upload className="h-4 w-4" /> Impor PDF struktur</Link>}
+          <button className="btn-primary" onClick={openNew}><Plus className="h-4 w-4" /> Periode Baru</button>
+        </>} />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {periods.map((p) => {
           const count = divisions.filter((d) => d.period_id === p.id).length;
+          const bidangCount = bidangs.filter((b) => b.period_id === p.id).length;
           return (
             <div key={p.id} className={`card p-5 ${activePeriodId === p.id ? "ring-2 ring-navy-600" : ""}`}>
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2"><CalendarRange className="h-5 w-5 text-navy-700" /><h2 className="font-bold text-navy-900">{p.name}</h2></div>
                 <Badge status={p.status}>{p.status}</Badge>
               </div>
-              <p className="mt-3 text-sm text-slate-600">Tahun: {p.year} · {count} bagian</p>
+              <p className="mt-3 text-sm text-slate-600">Tahun: {p.year} · {bidangCount} bidang · {count} bagian</p>
               <p className="mt-1 text-xs text-slate-500">Pelaksanaan: {formatDate(p.start_date)}{p.end_date ? ` – ${formatDate(p.end_date)}` : ""}</p>
               {p.description && <p className="mt-2 line-clamp-2 text-xs text-slate-400">{p.description}</p>}
               <div className="mt-4 flex flex-wrap gap-2">

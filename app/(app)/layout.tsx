@@ -42,7 +42,7 @@ function Shell({ children }: { children: React.ReactNode }) {
             <span className="hidden text-sm font-semibold text-navy-900 md:inline lg:hidden">Pendataan Personil</span>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <Link href="/personnel" className="btn-secondary h-11 w-11 !p-0 sm:h-auto sm:w-auto sm:!px-2.5 sm:!py-1.5" aria-label="Cari personil">
+            <Link href="/search" className="btn-secondary h-11 w-11 !p-0 sm:h-auto sm:w-auto sm:!px-2.5 sm:!py-1.5" aria-label="Cari data">
               <Search className="h-4 w-4" />
               <span className="hidden sm:inline">Cari data</span>
             </Link>

@@ -7,12 +7,14 @@ import { useApp } from "@/components/AppContext";
 import { api } from "@/lib/client/api";
 import { EmptyState, Loading, PageHeader, SearchBox, StatCard, useDebounce } from "@/components/ui";
 import { divisionStats, formatNumber } from "@/lib/utils";
-import type { Assignment } from "@/lib/types";
+import { organizationStats } from "@/lib/organization";
+import type { Assignment, Personnel } from "@/lib/types";
 
 export default function ReportsPage() {
-  const { divisions, periods, activePeriodId } = useApp();
+  const { divisions, bidangs, coordinators, periods, activePeriodId } = useApp();
   const [periodId, setPeriodId] = useState(activePeriodId);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
   const term = useDebounce(q);
@@ -25,11 +27,15 @@ export default function ReportsPage() {
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    api<{ data: Assignment[] }>(`/api/data/assignments?period_id=${periodId}`).then((r) => alive && setAssignments(r.data || [])).catch(() => undefined).finally(() => alive && setLoading(false));
+    Promise.all([
+      api<{ data: Assignment[] }>(`/api/data/assignments?period_id=${periodId}`),
+      api<{ data: Personnel[] }>("/api/data/personnel"),
+    ]).then(([a, p]) => { if (alive) { setAssignments(a.data || []); setPersonnel(p.data || []); } }).catch(() => undefined).finally(() => alive && setLoading(false));
     return () => { alive = false; };
   }, [periodId]);
 
-  const stats = useMemo(() => divisionStats(divisions, assignments, periodId).filter((s) => !term || s.division.name.toLowerCase().includes(term.toLowerCase())), [divisions, assignments, periodId, term]);
+  const stats = useMemo(() => divisionStats(divisions, assignments, periodId).filter((s) => !term || [s.division.name, bidangs.find((b) => b.id === s.division.bidang_id)?.name].some((v) => (v || "").toLowerCase().includes(term.toLowerCase()))), [divisions, assignments, periodId, term, bidangs]);
+  const org = useMemo(() => organizationStats(bidangs, coordinators, divisions, assignments, personnel, periodId), [bidangs, coordinators, divisions, assignments, personnel, periodId]);
   const total = stats.reduce((acc, s) => ({ required: acc.required + s.required, active: acc.active + s.active, lacking: acc.lacking + s.lacking, excess: acc.excess + s.excess }), { required: 0, active: 0, lacking: 0, excess: 0 });
 
   const exportLink = (type: string, format: string) => `/api/export?type=${type}&format=${format}&period_id=${periodId}`;
@@ -57,6 +63,15 @@ export default function ReportsPage() {
         <StatCard label="Total Kelebihan" value={formatNumber(total.excess)} />
       </div>
 
+      <div className="card mb-5 overflow-hidden">
+        <div className="border-b border-slate-100 p-4"><h2 className="font-bold text-navy-900">Rekap per Bidang</h2><p className="text-xs text-slate-500">Jumlah divisi, koordinator, ketua divisi, dan anggota</p></div>
+        {org.byBidang.length === 0 ? <EmptyState title="Belum ada bidang pada periode ini" /> : (
+          <div className="table-wrap"><table className="table"><thead><tr><th>Bidang</th><th>Ketua Koordinator</th><th className="text-right">Divisi</th><th className="text-right">Ketua Divisi</th><th className="text-right">Anggota</th><th className="text-right">Tanpa PJ</th></tr></thead><tbody>
+            {org.byBidang.map((row) => <tr key={row.bidang.id}><td><Link href={`/bidangs/${row.bidang.id}`} className="font-semibold text-navy-800 hover:underline">{row.bidang.name}</Link></td><td className="text-slate-600">{row.coordinators.map((c) => c.name || c.phone || "-").join(" · ") || "-"}</td><td className="text-right">{row.totalDivisi}</td><td className="text-right">{row.totalKetuaDivisi}</td><td className="text-right font-semibold">{row.totalAnggota}</td><td className="text-right">{row.tanpaKetua > 0 ? <span className="font-semibold text-amber-600">{row.tanpaKetua}</span> : "0"}</td></tr>)}
+          </tbody><tfoot className="bg-slate-50 font-bold text-navy-900"><tr><td>TOTAL</td><td>{org.totalKoordinator} koordinator</td><td className="text-right">{org.totalDivisi}</td><td className="text-right">{org.totalKetuaDivisi}</td><td className="text-right">{org.totalAnggota}</td><td className="text-right">{org.tanpaKetua.length}</td></tr></tfoot></table></div>
+        )}
+      </div>
+
       <div className="card overflow-hidden">
         {loading ? <Loading /> : stats.length === 0 ? <EmptyState /> : (
           <>
@@ -69,7 +84,7 @@ export default function ReportsPage() {
                     <Link href={`/divisions/${s.division.id}`} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center break-words font-semibold text-navy-800 lg:min-h-0">{s.division.name}</Link>
                     <span className="shrink-0 text-xs font-semibold text-slate-600">{s.required ? `${pct}%` : "-"}</span>
                   </div>
-                  <p className="mt-0.5 truncate text-xs text-slate-500">PJ: {s.division.leader_name || "-"}</p>
+                  <p className="mt-0.5 truncate text-xs text-slate-500">Bidang: {bidangs.find((b) => b.id === s.division.bidang_id)?.name || "-"} · PJ: {s.division.leader_name || "-"}</p>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100">
                     <div className={s.lacking > 0 ? "h-full bg-amber-400" : "h-full bg-navy-700"} style={{ width: `${pct}%` }} />
                   </div>
@@ -85,7 +100,7 @@ export default function ReportsPage() {
           </ul>
           <div className="table-wrap hidden lg:block">
             <table className="table">
-              <thead><tr><th>No</th><th>Nama Bagian</th><th>Penanggung Jawab</th><th className="text-right">Kebutuhan</th><th className="text-right">Terdaftar</th><th className="text-right">Aktif</th><th className="text-right">Kurang</th><th className="text-right">Lebih</th><th>Persentase</th></tr></thead>
+              <thead><tr><th>No</th><th>Nama Bagian</th><th>Bidang</th><th>Penanggung Jawab</th><th className="text-right">Kebutuhan</th><th className="text-right">Terdaftar</th><th className="text-right">Aktif</th><th className="text-right">Kurang</th><th className="text-right">Lebih</th><th>Persentase</th></tr></thead>
               <tbody>
                 {stats.map((s, i) => {
                   const pct = s.required ? Math.min(100, Math.round((s.active / s.required) * 100)) : 0;
@@ -93,6 +108,7 @@ export default function ReportsPage() {
                     <tr key={s.division.id}>
                       <td className="text-slate-400">{i + 1}</td>
                       <td><Link href={`/divisions/${s.division.id}`} className="font-semibold text-navy-800 hover:underline">{s.division.name}</Link></td>
+                      <td className="text-slate-600">{bidangs.find((b) => b.id === s.division.bidang_id)?.name || "-"}</td>
                       <td className="text-slate-600">{s.division.leader_name || "-"}</td>
                       <td className="text-right">{s.required}</td>
                       <td className="text-right text-slate-500">{s.registered}</td>
@@ -104,7 +120,7 @@ export default function ReportsPage() {
                   );
                 })}
               </tbody>
-              <tfoot className="bg-slate-50 font-bold text-navy-900"><tr><td colSpan={3}>TOTAL</td><td className="text-right">{total.required}</td><td className="text-right">-</td><td className="text-right">{total.active}</td><td className="text-right">{total.lacking}</td><td className="text-right">{total.excess}</td><td /></tr></tfoot>
+              <tfoot className="bg-slate-50 font-bold text-navy-900"><tr><td colSpan={4}>TOTAL</td><td className="text-right">{total.required}</td><td className="text-right">-</td><td className="text-right">{total.active}</td><td className="text-right">{total.lacking}</td><td className="text-right">{total.excess}</td><td /></tr></tfoot>
             </table>
           </div>
           </>

@@ -15,6 +15,7 @@ export type ApiUser = {
     can_import: boolean;
     can_export: boolean;
     can_view_reports: boolean;
+    bidang_id?: string;
     division_id?: string;
     period_id?: string;
   }[];

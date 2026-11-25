@@ -6,7 +6,7 @@ import { all, snapshot } from "@/lib/server/db";
 import { can, getSession } from "@/lib/server/auth";
 import { apiError, fail } from "@/lib/server/http";
 import { divisionStats, formatDate } from "@/lib/utils";
-import type { Assignment, Division, Personnel, Supervisor, WorkAssignment } from "@/lib/types";
+import type { Assignment, Bidang, Division, Personnel, Supervisor, WorkAssignment } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -53,10 +53,11 @@ export async function GET(req: NextRequest) {
     const position = q.get("position") || "";
     const status = q.get("status") || "";
 
-    const [personnel, divisions, assignments, supervisors, works] = await Promise.all([
-      all<Personnel>("personnel"), all<Division>("divisions"), all<Assignment>("assignments"),
+    const [personnel, bidangs, divisions, assignments, supervisors, works] = await Promise.all([
+      all<Personnel>("personnel"), all<Bidang>("bidangs"), all<Division>("divisions"), all<Assignment>("assignments"),
       all<Supervisor>("supervisors"), all<WorkAssignment>("work_assignments"),
     ]);
+    const bidangMap = new Map(bidangs.map((b) => [b.id, b.name]));
 
     if (type === "full" && format === "json") {
       const snap = await snapshot();
@@ -80,16 +81,17 @@ export async function GET(req: NextRequest) {
         (!status || p.status === status) &&
         (!position || scopedAssignments.some((a) => a.personnel_id === p.id && a.position_name.toLowerCase().includes(position.toLowerCase()))),
       );
-      columns = ["No", "ID", "Nama", "Jenis Kelamin", "Asal/Korwil", "No. WhatsApp", "Bagian", "Jabatan", "Status", "Keterangan"];
+      columns = ["No", "ID", "Nama", "Jenis Kelamin", "Asal/Korwil", "No. WhatsApp", "Bidang", "Bagian", "Jabatan", "Status", "Keterangan"];
       rows = list.map((p, i) => {
         const a = scopedAssignments.find((x) => x.personnel_id === p.id && x.status === "aktif") || scopedAssignments.find((x) => x.personnel_id === p.id);
-        return [i + 1, p.code, p.full_name, p.gender || "", p.korwil || p.origin || "", p.phone || "", a ? divisionMap.get(a.division_id)?.name || "" : "", a?.position_name || "", p.status, p.notes || ""];
+        const d = a ? divisionMap.get(a.division_id) : null;
+        return [i + 1, p.code, p.full_name, p.gender || "", p.korwil || p.origin || "", p.phone || "", d?.bidang_id ? bidangMap.get(d.bidang_id) || "" : "", d?.name || "", a?.position_name || "", p.status, p.notes || ""];
       });
       subtitle = `Data Personil${divisionId ? ` - ${divisionMap.get(divisionId)?.name || ""}` : ""}${korwil ? ` - Korwil ${korwil}` : ""}${position ? ` - ${position}` : ""}`;
     } else if (type === "divisions" || type === "rekap" || type === "needs") {
       const stats = divisionStats(divisions, assignments, periodId || undefined);
-      columns = ["No", "Kode", "Nama Bagian", "Penanggung Jawab", "Koordinator", "Kebutuhan", "Terdaftar", "Aktif", "Kurang", "Lebih", "Keterangan"];
-      rows = stats.map((s, i) => [i + 1, s.division.code, s.division.name, s.division.leader_name || "", s.division.coordinator_name || "", s.required, s.registered, s.active, s.lacking, s.excess, s.division.notes || ""]);
+      columns = ["No", "Kode", "Bidang", "Nama Bagian", "Penanggung Jawab", "No. WhatsApp Ketua", "Koordinator", "Kebutuhan", "Terdaftar", "Aktif", "Kurang", "Lebih", "Keterangan"];
+      rows = stats.map((s, i) => [i + 1, s.division.code, s.division.bidang_id ? bidangMap.get(s.division.bidang_id) || "" : "", s.division.name, s.division.leader_name || "", s.division.leader_phone || "", s.division.coordinator_name || "", s.required, s.registered, s.active, s.lacking, s.excess, s.division.notes || ""]);
       title = type === "needs" ? "LAPORAN KEBUTUHAN & KEKURANGAN PERSONIL" : "REKAPITULASI BAGIAN / DIVISI";
       subtitle = "Rekapitulasi seluruh bagian dan kebutuhan personil";
     } else if (type === "supervision") {

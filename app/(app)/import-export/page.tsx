@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, Download, FileSpreadsheet, History, RotateCcw, Save, Upload, XCircle } from "lucide-react";
+import { CheckCircle2, Download, FileSpreadsheet, History, Layers3, RotateCcw, Save, Upload, XCircle } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api, post } from "@/lib/client/api";
 import { Badge, EmptyState, Field, Loading, PageHeader, Pagination, confirmDialog, toast } from "@/components/ui";
@@ -14,7 +14,7 @@ type PreviewRow = {
 };
 
 export default function ImportExportPage() {
-  const { activePeriodId, periods, divisions } = useApp();
+  const { user, activePeriodId, periods, divisions, refresh } = useApp();
   const [file, setFile] = useState<File | null>(null);
   const [sheets, setSheets] = useState<string[]>([]);
   const [selectedSheets, setSelectedSheets] = useState<string[]>([]);
@@ -22,6 +22,10 @@ export default function ImportExportPage() {
   const [preview, setPreview] = useState<{ rows: PreviewRow[]; counts: Record<string, number>; sheets: { sheet: string; header_row: number; columns: Record<string, number>; rows: number }[] } | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [targetPeriodId, setTargetPeriodId] = useState("");
+  const [importingStructure, setImportingStructure] = useState(false);
+  const [structureResult, setStructureResult] = useState<{ bidangs: number; coordinators: number; divisions: number; archivedDivisions: number; uploaded_file: string } | null>(null);
   const [batchId, setBatchId] = useState("");
   const [page, setPage] = useState(1);
   const [batches, setBatches] = useState<ImportBatch[]>([]);
@@ -40,6 +44,10 @@ export default function ImportExportPage() {
   };
   useEffect(() => { void loadMeta(); }, []);
   useEffect(() => setExportForm((f) => ({ ...f, period_id: activePeriodId })), [activePeriodId]);
+  useEffect(() => {
+    const haul = periods.find((p) => p.name.toLowerCase().includes("haul") && p.name.includes("2026"));
+    setTargetPeriodId((prev) => prev || haul?.id || activePeriodId);
+  }, [periods, activePeriodId]);
 
   async function onFile(f: File | null) {
     setFile(f); setPreview(null); setSelected(new Set()); setBatchId("");
@@ -90,6 +98,24 @@ export default function ImportExportPage() {
     finally { setLoading(false); }
   }
 
+  async function importStructure() {
+    if (!pdfFile) { toast("Pilih file PDF terlebih dahulu", "error"); return; }
+    if (!targetPeriodId) { toast("Pilih periode tujuan", "error"); return; }
+    const target = periods.find((p) => p.id === targetPeriodId);
+    if (!(await confirmDialog(`Impor PDF "${pdfFile.name}" ke ${target?.name || "periode terpilih"}?`, "Struktur lama pada periode ini diarsipkan. Personil dan penugasan tidak dihapus.", "Unggah & Impor"))) return;
+    setImportingStructure(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", pdfFile);
+      fd.append("period_id", targetPeriodId);
+      const r = await api<{ data: { bidangs: number; coordinators: number; divisions: number; archivedDivisions: number; linkedPersonnel: number; uploaded_file: string } }>("/api/import/structure", { method: "POST", body: fd });
+      setStructureResult(r.data);
+      toast(`Impor PDF selesai: ${r.data.bidangs} bidang, ${r.data.coordinators} koordinator, ${r.data.divisions} divisi`);
+      await loadMeta(); await refresh();
+    } catch (e) { toast((e as Error).message, "error"); }
+    finally { setImportingStructure(false); }
+  }
+
   async function rollback(batch: ImportBatch) {
     if (!(await confirmDialog(`Batalkan import ${batch.file_name}?`, "Data yang sudah diubah terpisah setelah import tidak akan dihapus.", "Pulihkan"))) return;
     try { await post("/api/action", { action: "rollback_import", payload: { batch_id: batch.id } }); toast("Batch import dibatalkan"); await loadMeta(); }
@@ -113,6 +139,22 @@ export default function ImportExportPage() {
   return (
     <div>
       <PageHeader title="Import & Export" description="Impor data dari Excel dengan preview dan pemetaan kolom, ekspor laporan, serta cadangan data" />
+
+      {user?.role === "admin" && <div className="card mb-5 p-5">
+        <div className="mb-4 flex items-center gap-2"><Layers3 className="h-5 w-5 text-navy-700" /><div><h2 className="font-bold text-navy-900">Impor Struktur dari PDF</h2><p className="text-xs text-slate-500">PDF yang Anda unggah yang dipakai sebagai sumber data, bukan file bawaan.</p></div></div>
+        <div className="grid gap-3 md:grid-cols-[1fr_240px_auto] md:items-end">
+          <label className="flex min-h-[52px] cursor-pointer flex-col justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-2 transition hover:border-navy-400">
+            <span className="text-xs font-semibold text-navy-800">{pdfFile ? pdfFile.name : "Klik untuk pilih PDF (.pdf, maks. 15 MB)"}</span>
+            <span className="mt-0.5 text-[11px] text-slate-500">Struktur lama di periode tujuan akan diarsipkan, personil tetap dipertahankan</span>
+            <input type="file" accept="application/pdf,.pdf" className="hidden" onChange={(e) => { setPdfFile(e.target.files?.[0] || null); setStructureResult(null); }} />
+          </label>
+          <Field label="Periode tujuan">
+            <select className="input" value={targetPeriodId} onChange={(e) => setTargetPeriodId(e.target.value)}>{periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          </Field>
+          <button className="btn-primary min-h-[52px] shrink-0" disabled={importingStructure} onClick={() => void importStructure()}><Upload className="h-4 w-4" /> {importingStructure ? "Memproses..." : "Unggah & Impor"}</button>
+        </div>
+        {structureResult && <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">Berhasil: {structureResult.bidangs} bidang · {structureResult.coordinators} koordinator · {structureResult.divisions} divisi · {structureResult.archivedDivisions} divisi lama diarsipkan. File tersimpan di `{structureResult.uploaded_file}`.</div>}
+      </div>}
 
       <div className="grid gap-5 xl:grid-cols-2">
         <div className="card p-5">

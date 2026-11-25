@@ -7,10 +7,11 @@ import { useApp } from "@/components/AppContext";
 import { api } from "@/lib/client/api";
 import { Loading, PageHeader, StatCard, Badge, EmptyState } from "@/components/ui";
 import { dashboardNumbers, formatDateTime } from "@/lib/utils";
+import { organizationStats } from "@/lib/organization";
 import type { ActivityLog, Assignment, Personnel } from "@/lib/types";
 
 export default function DashboardPage() {
-  const { divisions, activePeriodId, periods } = useApp();
+  const { divisions, bidangs, coordinators, activePeriodId, periods } = useApp();
   const [personnel, setPersonnel] = useState<Personnel[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [logs, setLogs] = useState<ActivityLog[]>([]);
@@ -30,6 +31,7 @@ export default function DashboardPage() {
   }, [activePeriodId]);
 
   const n = useMemo(() => dashboardNumbers(divisions, assignments, personnel, activePeriodId), [divisions, assignments, personnel, activePeriodId]);
+  const org = useMemo(() => organizationStats(bidangs, coordinators, divisions, assignments, personnel, activePeriodId), [bidangs, coordinators, divisions, assignments, personnel, activePeriodId]);
   const max = Math.max(1, ...n.stats.map((s) => s.active));
   const top = [...n.stats].sort((a, b) => b.active - a.active).slice(0, 6);
   const lacking = [...n.stats].filter((s) => s.lacking > 0).sort((a, b) => b.lacking - a.lacking).slice(0, 6);
@@ -51,6 +53,32 @@ export default function DashboardPage() {
         <StatCard label="Belum Ditempatkan" value={n.unassigned} icon={<UserRoundX className="h-5 w-5" />} />
         <StatCard label="Total Kebutuhan" value={n.totalRequired} icon={<Target className="h-5 w-5" />} />
         <StatCard label="Kekurangan" value={n.totalLacking} icon={<CircleAlert className="h-5 w-5" />} />
+      </div>
+
+      <div className="card mt-5 p-5">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-bold text-navy-900">Struktur Organisasi</h2>
+            <p className="text-xs text-slate-500">Rekap bidang, koordinator, ketua divisi, dan anggota pada periode aktif</p>
+          </div>
+          <Link href="/bidangs" className="inline-flex min-h-[44px] items-center text-xs font-semibold text-navy-700 hover:underline lg:min-h-0">Lihat semua bidang</Link>
+        </div>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+          <StatCard label="Bidang" value={org.totalBidang} />
+          <StatCard label="Divisi" value={org.totalDivisi} />
+          <StatCard label="Ketua Koordinator" value={org.totalKoordinator} />
+          <StatCard label="Ketua Divisi" value={org.totalKetuaDivisi} />
+          <StatCard label="Anggota" value={org.totalAnggota} />
+          <StatCard label="Divisi Tanpa Ketua" value={org.tanpaKetua.length} />
+        </div>
+        {org.byBidang.length > 0 && <div className="mt-4 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+          {org.byBidang.slice(0, 6).map((row) => (
+            <Link key={row.bidang.id} href={`/bidangs/${row.bidang.id}`} className="flex min-h-[44px] items-center justify-between gap-2 rounded-lg border border-slate-100 px-3 py-2 hover:border-navy-200 hover:bg-navy-50/40">
+              <span className="truncate text-sm text-slate-700">{row.bidang.name}</span>
+              <span className="shrink-0 text-xs font-semibold text-navy-700">{row.totalDivisi} divisi · {row.totalAnggota} anggota</span>
+            </Link>
+          ))}
+        </div>}
       </div>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-3">

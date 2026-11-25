@@ -135,7 +135,7 @@ export async function authenticate(username: string, password: string): Promise<
 export type Action =
   | "view" | "create" | "edit" | "delete" | "move" | "assign" | "import" | "export" | "reports";
 
-export async function can(session: Session | null, action: Action, scope?: { divisionId?: string; periodId?: string }): Promise<boolean> {
+export async function can(session: Session | null, action: Action, scope?: { divisionId?: string; bidangId?: string; periodId?: string }): Promise<boolean> {
   if (!session) return false;
   if (session.role === "admin") return true;
   const permissions = await all<OperatorPermission>("operator_permissions");
@@ -143,7 +143,9 @@ export async function can(session: Session | null, action: Action, scope?: { div
   const relevant = mine.filter((p) => {
     if (p.period_id && scope?.periodId && p.period_id !== scope.periodId) return false;
     if (p.division_id && scope?.divisionId && p.division_id !== scope.divisionId) return false;
-    if (!scope?.divisionId && p.division_id) return false;
+    if (p.bidang_id && scope?.bidangId && p.bidang_id !== scope.bidangId) return false;
+    if (!scope?.divisionId && !scope?.bidangId && p.division_id) return false;
+    if (!scope?.divisionId && !scope?.bidangId && p.bidang_id) return false;
     if (!scope?.periodId && p.period_id) return false;
     return true;
   });
@@ -243,6 +245,7 @@ export async function logActivity(input: {
   entity_type: string;
   entity_id?: string;
   period_id?: string;
+  bidang_id?: string;
   division_id?: string;
   before_data?: unknown;
   after_data?: unknown;
@@ -256,6 +259,7 @@ export async function logActivity(input: {
     entity_type: input.entity_type,
     entity_id: input.entity_id || "",
     period_id: input.period_id || null,
+    bidang_id: input.bidang_id || null,
     division_id: input.division_id || null,
     before_data: input.before_data ?? null,
     after_data: input.after_data ?? null,
