@@ -306,7 +306,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
               </select>
               {assignmentLoading && <span className="mt-1 block text-[11px] text-slate-400">Memuat bagian saat ini...</span>}
             </Field>
-            {!initial && (
+            {!initial && canSelectPosition && (
               <Field label="Status">
                 <select className="input" value={form.position_name === "Pengurus" ? "Pengurus" : "Anggota"} onChange={(e) => set("position_name", e.target.value)}>
                   <option value="Anggota">Anggota</option>
