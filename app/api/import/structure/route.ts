@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -13,10 +13,41 @@ export const dynamic = "force-dynamic";
 
 const MAX_PDF_BYTES = 15 * 1024 * 1024;
 
+let cachedPython: { command: string; prefix: string[] } | null = null;
+
+function resolvePython() {
+  if (cachedPython) return cachedPython;
+  const localAppData = process.env.LOCALAPPDATA || "";
+  const candidates = [
+    process.env.PYTHON_BIN,
+    "python",
+    "python3",
+    "py",
+    "C:\\Python314\\python.exe",
+    "C:\\Python313\\python.exe",
+    "C:\\Python312\\python.exe",
+    "C:\\Python311\\python.exe",
+    localAppData && path.join(localAppData, "Programs", "Python", "Python314", "python.exe"),
+    localAppData && path.join(localAppData, "Programs", "Python", "Python313", "python.exe"),
+    localAppData && path.join(localAppData, "Programs", "Python", "Python312", "python.exe"),
+  ].filter(Boolean) as string[];
+
+  for (const command of candidates) {
+    const prefix = path.basename(command).toLowerCase() === "py.exe" || command.toLowerCase() === "py" ? ["-3"] : [];
+    const probe = spawnSync(command, [...prefix, "-c", "import pymupdf"], { stdio: "ignore", windowsHide: true });
+    if (!probe.error && probe.status === 0) {
+      cachedPython = { command, prefix };
+      return cachedPython;
+    }
+  }
+  throw new Error("Python + pymupdf tidak ditemukan. Install Python 3, jalankan `pip install pymupdf`, atau set PYTHON_BIN di .env.local");
+}
+
 function runExtractor(pdfPath: string, jsonPath: string, periodName: string, periodYear: string, sourceFile: string) {
   return new Promise<{ fields: number; divisions: number }>((resolve, reject) => {
     const script = path.join(process.cwd(), "scripts", "extract_pdf_structure.py");
-    const child = spawn(process.env.PYTHON_BIN || "python", [script, pdfPath, jsonPath, periodName, periodYear, sourceFile]);
+    const python = resolvePython();
+    const child = spawn(python.command, [...python.prefix, script, pdfPath, jsonPath, periodName, periodYear, sourceFile]);
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (chunk) => { stdout += String(chunk); });
