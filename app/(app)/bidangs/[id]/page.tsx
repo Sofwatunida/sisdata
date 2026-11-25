@@ -128,7 +128,7 @@ export default function BidangDetailPage() {
             <h2 className="font-bold text-navy-900">Ketua Koordinator Bidang</h2>
             <p className="text-xs text-slate-500">Nama dan nomor diambil dari PDF sumber; nomor tidak dibuat-buat.</p>
           </div>
-          {can("bidang_coordinators", "create", scope) && <button className="btn-secondary !text-xs" onClick={() => openCoordinator()}><Plus className="h-4 w-4" /> Tambah koordinator</button>}
+          {user?.role === "admin" && <button className="btn-secondary !text-xs" onClick={() => openCoordinator()}><Plus className="h-4 w-4" /> Tambah koordinator</button>}
         </div>
         {fieldCoordinators.length === 0 ? <div className="mt-3"><EmptyState title="Koordinator belum diisi" /></div> : (
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -154,7 +154,7 @@ export default function BidangDetailPage() {
       <div className="card mt-5 overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <div><h2 className="font-bold text-navy-900">Daftar Divisi</h2><p className="text-xs text-slate-500">{fieldDivisions.length} divisi terdaftar · {fieldDivisions.filter((d) => !d.is_archived).length} aktif</p></div>
-          {can("divisions", "create", scope) && <button className="btn-primary !text-xs" onClick={() => openDivision()}><Plus className="h-4 w-4" /> Tambah divisi</button>}
+          {user?.role === "admin" && <button className="btn-primary !text-xs" onClick={() => openDivision()}><Plus className="h-4 w-4" /> Tambah divisi</button>}
         </div>
         {fieldDivisions.length === 0 ? <EmptyState title="Belum ada divisi pada bidang ini" /> : (
           <>

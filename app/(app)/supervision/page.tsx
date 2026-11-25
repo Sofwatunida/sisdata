@@ -8,7 +8,7 @@ import { EmptyState, Field, Loading, Modal, PageHeader, confirmDialog, toast } f
 import type { Supervisor, WorkAssignment } from "@/lib/types";
 
 export default function SupervisionPage() {
-  const { activePeriodId } = useApp();
+  const { user, activePeriodId } = useApp();
   const [supervisors, setSupervisors] = useState<Supervisor[]>([]);
   const [works, setWorks] = useState<WorkAssignment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export default function SupervisionPage() {
   return (
     <div>
       <PageHeader title="Data Pengawasan" description="Penanggung jawab pengawas panitia dan daftar pekerjaan yang diawasi"
-        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=supervision&format=xlsx&period_id=${activePeriodId}`}><Download className="h-4 w-4" /> Export</button><button className="btn-primary" onClick={() => openForm()}><Plus className="h-4 w-4" /> Tambah Pekerjaan</button></>} />
+        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=supervision&format=xlsx&period_id=${activePeriodId}`}><Download className="h-4 w-4" /> Export</button>{user?.role === "admin" && <button className="btn-primary" onClick={() => openForm()}><Plus className="h-4 w-4" /> Tambah Pekerjaan</button>}</>} />
 
       {supervisors.length === 0 ? <EmptyState title="Belum ada data pengawasan" description="Data pengawas panitia akan muncul setelah import data awal atau ditambahkan manual." /> : (
         <div className="grid gap-5 lg:grid-cols-2">
@@ -81,7 +81,7 @@ export default function SupervisionPage() {
                     ))}
                   </ul>
                 )}
-                <div className="border-t border-slate-100 px-4 py-2 sm:px-5 sm:py-3"><button className="min-h-[44px] text-xs font-semibold text-navy-700 hover:underline lg:min-h-0" onClick={() => openForm(undefined, s.id)}>+ Tambah pekerjaan pada kelompok ini</button></div>
+                <div className="border-t border-slate-100 px-4 py-2 sm:px-5 sm:py-3">{user?.role === "admin" && <button className="min-h-[44px] text-xs font-semibold text-navy-700 hover:underline lg:min-h-0" onClick={() => openForm(undefined, s.id)}>+ Tambah pekerjaan pada kelompok ini</button>}</div>
               </div>
             );
           })}

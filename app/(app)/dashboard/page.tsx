@@ -47,11 +47,11 @@ export default function DashboardPage() {
         actions={<Link href="/reports" className="btn-secondary">Lihat rekap <ArrowRight className="h-4 w-4" /></Link>}
       />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <StatCard label="Total Personil" value={n.totalPersonnel} icon={<Users className="h-5 w-5" />} />
-        <StatCard label="Total Bagian" value={n.totalDivisions} icon={<Boxes className="h-5 w-5" />} />
+        <StatCard label="Personil" value={n.totalPersonnel} icon={<Users className="h-5 w-5" />} />
+        <StatCard label="Divisi" value={n.totalDivisions} icon={<Boxes className="h-5 w-5" />} />
         <StatCard label="Personil Aktif" value={n.activePersonnel} icon={<UserRoundCheck className="h-5 w-5" />} />
         <StatCard label="Belum Ditempatkan" value={n.unassigned} icon={<UserRoundX className="h-5 w-5" />} />
-        <StatCard label="Total Kebutuhan" value={n.totalRequired} icon={<Target className="h-5 w-5" />} />
+        <StatCard label="Kebutuhan" value={n.totalRequired} icon={<Target className="h-5 w-5" />} />
         <StatCard label="Kekurangan" value={n.totalLacking} icon={<CircleAlert className="h-5 w-5" />} />
       </div>
 

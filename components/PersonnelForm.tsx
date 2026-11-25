@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, post, patch } from "@/lib/client/api";
 import { Field, Modal, confirmDialog, toast } from "@/components/ui";
+import { useApp } from "@/components/AppContext";
 import type { Assignment, Division, MasterData, Personnel } from "@/lib/types";
 import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
 
@@ -22,6 +23,9 @@ const empty = {
 };
 
 export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", defaultPeriodId = "", onSaved, onDivisionsChanged }: Props) {
+  const { user } = useApp();
+  const canCreateDivision = user?.role === "admin";
+  const canSelectPosition = user?.role === "admin";
   const [form, setForm] = useState<Record<string, any>>({ ...empty });
   const [allDivisions, setAllDivisions] = useState<Division[]>([]);
   const [master, setMaster] = useState<MasterData[]>([]);
@@ -93,6 +97,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
   }, [allDivisions, effectivePeriodId, originalDivisionId, form.division_id]);
 
   const set = (key: string, value: string) => setForm((f) => ({ ...f, [key]: value }));
+  const positionValue = () => canSelectPosition ? String(form.position_name || "Anggota") : "Anggota";
   const options = (type: string, fallback: string[] = []) => {
     const values = master.filter((m) => m.type === type && m.is_active).map((m) => m.value);
     return [...new Set([...values, ...fallback])];
@@ -157,7 +162,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
           assignment_id: currentAssignment.id,
           division_id: targetDivisionId,
           period_id: effectivePeriodId,
-          position_name: form.position_name || currentAssignment.position_name || "Anggota",
+          position_name: positionValue(),
         },
       });
       return;
@@ -168,7 +173,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
         personnel_id: personnelId,
         division_id: targetDivisionId,
         period_id: effectivePeriodId,
-        position_name: form.position_name || "Anggota",
+        position_name: positionValue(),
       },
     });
   }
@@ -178,7 +183,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
     setNameError(false);
     setSaving(true);
     try {
-      const { division_id, period_id, position_name, ...personFields } = form;
+      const { division_id, period_id, position_name: _positionName, ...personFields } = form;
       let saved: Personnel;
       const suffix = force ? "?force=1" : "";
       if (initial?.id) {
@@ -189,14 +194,14 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
         if (division_id) {
           await post("/api/action", {
             action: "assign_personnel",
-            payload: { personnel_id: saved.id, division_id, period_id: period_id || effectivePeriodId, position_name },
+            payload: { personnel_id: saved.id, division_id, period_id: period_id || effectivePeriodId, position_name: positionValue() },
           });
         }
       }
       onSaved?.(saved);
       toast(initial ? "Data personil diperbarui" : "Personil berhasil ditambahkan");
       if (repeat && !initial) {
-        setForm({ ...empty, division_id, period_id, position_name });
+        setForm({ ...empty, division_id, period_id, position_name: positionValue() });
       } else onClose();
     } catch (error) {
       const message = (error as Error).message;
@@ -278,7 +283,7 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
         <section>
           <h3 className={sectionTitle}><span className="flex h-5 w-5 items-center justify-center rounded-full bg-navy-100 text-[11px]">3</span> Informasi Penugasan</h3>
           <div className={sectionGrid}>
-            <Field label="Bagian / divisi">
+            <Field label="Divisi">
               <select
                 className="input"
                 value={form.division_id}
@@ -297,17 +302,19 @@ export function PersonnelForm({ open, onClose, initial, defaultDivisionId = "", 
               >
                 <option value="">Belum ditempatkan</option>
                 {divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                <option value="__new__">+ Tambah bagian baru...</option>
+                {canCreateDivision && <option value="__new__">+ Tambah bagian baru...</option>}
               </select>
               {assignmentLoading && <span className="mt-1 block text-[11px] text-slate-400">Memuat bagian saat ini...</span>}
             </Field>
             {!initial && (
-              <Field label="Jabatan">
-                <input className="input" list="opt-position" value={form.position_name} onChange={(e) => set("position_name", e.target.value)} />
-                <datalist id="opt-position">{options("jabatan", ["Anggota"]).map((v) => <option key={v} value={v} />)}</datalist>
+              <Field label="Status">
+                <select className="input" value={form.position_name === "Pengurus" ? "Pengurus" : "Anggota"} onChange={(e) => set("position_name", e.target.value)}>
+                  <option value="Anggota">Anggota</option>
+                  <option value="Pengurus">Pengurus</option>
+                </select>
               </Field>
             )}
-            {customOpen && (
+            {canCreateDivision && customOpen && (
               <div className="sm:col-span-2 rounded-lg border border-navy-100 bg-navy-50/50 p-3">
                 <span className="label">Nama bagian baru</span>
                 <div className="flex flex-col gap-2 sm:flex-row">

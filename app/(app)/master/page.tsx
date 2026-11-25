@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Database, Pencil, Plus, Trash2 } from "lucide-react";
 import { api, patch, del, post } from "@/lib/client/api";
+import { useApp } from "@/components/AppContext";
 import { EmptyState, Field, Loading, Modal, PageHeader, SearchBox, confirmDialog, toast, useDebounce } from "@/components/ui";
 import { Badge } from "@/components/ui";
 import type { MasterData } from "@/lib/types";
@@ -10,6 +11,7 @@ import type { MasterData } from "@/lib/types";
 const TYPES = ["asal_daerah", "korwil", "jabatan", "status_personil", "status_penugasan", "kategori_divisi", "jenis_acara", "kategori_pekerjaan", "penanggung_jawab", "koordinator", "nama_bagian"];
 
 export default function MasterPage() {
+  const { user } = useApp();
   const [rows, setRows] = useState<MasterData[]>([]);
   const [loading, setLoading] = useState(true);
   const [type, setType] = useState("korwil");
@@ -47,7 +49,7 @@ export default function MasterPage() {
   return (
     <div>
       <PageHeader title="Data Master" description="Kelola pilihan dinamis yang digunakan pada formulir dan filter"
-        actions={<button className="btn-primary" onClick={() => { setEditing(null); setForm({ type, value: "", is_active: true }); setOpen(true); }}><Plus className="h-4 w-4" /> Tambah Data</button>} />
+        actions={user?.role === "admin" ? <button className="btn-primary" onClick={() => { setEditing(null); setForm({ type, value: "", is_active: true }); setOpen(true); }}><Plus className="h-4 w-4" /> Tambah Data</button> : undefined} />
       <div className="card overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-slate-100 p-4 sm:flex-row sm:items-center sm:justify-between">
           <select className="input capitalize sm:!w-auto" value={type} onChange={(e) => setType(e.target.value)} aria-label="Jenis data master">{TYPES.map((t) => <option key={t} value={t}>{t.replace(/_/g, " ")}</option>)}</select>

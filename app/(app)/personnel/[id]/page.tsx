@@ -13,7 +13,7 @@ import type { Assignment, Division, Period, Personnel } from "@/lib/types";
 
 export default function PersonnelDetailPage() {
   const params = useParams<{ id: string }>();
-  const { activePeriodId, refresh } = useApp();
+  const { user, activePeriodId, refresh } = useApp();
   const [person, setPerson] = useState<Personnel | null>(null);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [divisions, setDivisions] = useState<Division[]>([]);
@@ -47,13 +47,14 @@ export default function PersonnelDetailPage() {
 
   async function addAssignment() {
     if (!form.division_id) { toast("Pilih bagian terlebih dahulu", "error"); return; }
+    const payload = { ...form, position_name: user?.role === "admin" ? form.position_name || "Anggota" : "Anggota" };
     try {
-      await post("/api/action", { action: "assign_personnel", payload: { personnel_id: params.id, ...form } });
+      await post("/api/action", { action: "assign_personnel", payload: { personnel_id: params.id, ...payload } });
       toast("Penugasan ditambahkan"); setAssignOpen(false); await load();
     } catch (e) {
       const msg = (e as Error).message;
       if (msg.includes("DUPLICATE_WARNING") && await confirmDialog("Penugasan ganda", "Personil sudah memiliki penugasan aktif di bagian ini. Tetap tambahkan penugasan baru?", "Tetap tambahkan")) {
-        await post("/api/action", { action: "assign_personnel", payload: { personnel_id: params.id, ...form, force: true } });
+        await post("/api/action", { action: "assign_personnel", payload: { personnel_id: params.id, ...payload, force: true } });
         toast("Penugasan ditambahkan"); setAssignOpen(false); await load();
       } else toast(msg, "error");
     }
@@ -169,8 +170,13 @@ export default function PersonnelDetailPage() {
       <Modal open={assignOpen} onClose={() => setAssignOpen(false)} title="Tambah Penugasan" size="sm">
         <div className="space-y-3">
           <Field label="Periode"><select className="input" value={form.period_id} onChange={(e) => setForm({ ...form, period_id: e.target.value })}>{periods.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select></Field>
-          <Field label="Bagian / divisi"><select className="input" value={form.division_id} onChange={(e) => setForm({ ...form, division_id: e.target.value })}><option value="">Pilih bagian...</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
-          <Field label="Jabatan"><input className="input" value={form.position_name} onChange={(e) => setForm({ ...form, position_name: e.target.value })} /></Field>
+          <Field label="Divisi"><select className="input" value={form.division_id} onChange={(e) => setForm({ ...form, division_id: e.target.value })}><option value="">Pilih bagian...</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select></Field>
+          {user?.role === "admin" && <Field label="Jabatan">
+            <select className="input" value={form.position_name === "Pengurus" ? "Pengurus" : "Anggota"} onChange={(e) => setForm({ ...form, position_name: e.target.value })}>
+              <option value="Anggota">Anggota</option>
+              <option value="Pengurus">Pengurus</option>
+            </select>
+          </Field>}
           <Field label="Keterangan"><textarea className="input" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} /></Field>
           <div className="flex gap-2 pt-2 sm:justify-end [&>*]:flex-1 sm:[&>*]:flex-none"><button className="btn-secondary" onClick={() => setAssignOpen(false)}>Batal</button><button className="btn-primary" onClick={() => void addAssignment()}>Simpan</button></div>
         </div>

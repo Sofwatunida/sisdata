@@ -78,7 +78,7 @@ export default function BidangsPage() {
   return (
     <div>
       <PageHeader
-        title="Bidang & Divisi"
+        title="Bidang"
         description={`Struktur organisasi bertingkat · ${period?.name || "-"}`}
         actions={user?.role === "admin" ? <button className="btn-primary" disabled={importing} onClick={() => void importStructure()}><Upload className="h-4 w-4" /> {importing ? "Mengimpor..." : "Impor struktur 2026"}</button> : undefined}
       />

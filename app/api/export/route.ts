@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
       const stats = divisionStats(divisions, assignments, periodId || undefined);
       columns = ["No", "Kode", "Bidang", "Nama Bagian", "Penanggung Jawab", "No. WhatsApp Ketua", "Koordinator", "Kebutuhan", "Terdaftar", "Aktif", "Kurang", "Lebih", "Keterangan"];
       rows = stats.map((s, i) => [i + 1, s.division.code, s.division.bidang_id ? bidangMap.get(s.division.bidang_id) || "" : "", s.division.name, s.division.leader_name || "", s.division.leader_phone || "", s.division.coordinator_name || "", s.required, s.registered, s.active, s.lacking, s.excess, s.division.notes || ""]);
-      title = type === "needs" ? "LAPORAN KEBUTUHAN & KEKURANGAN PERSONIL" : "REKAPITULASI BAGIAN / DIVISI";
+      title = type === "needs" ? "LAPORAN KEBUTUHAN & KEKURANGAN PERSONIL" : "REKAPITULASI DIVISI";
       subtitle = "Rekapitulasi seluruh bagian dan kebutuhan personil";
     } else if (type === "supervision") {
       const supMap = new Map(supervisors.map((s) => [s.id, s]));

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { CalendarRange, Copy, Pencil, Plus, Upload } from "lucide-react";
 import { useApp } from "@/components/AppContext";
 import { api, post } from "@/lib/client/api";
@@ -10,11 +11,18 @@ import { formatDate } from "@/lib/utils";
 
 export default function PeriodsPage() {
   const { user, periods, bidangs, activePeriodId, setActivePeriodId, refresh, divisions } = useApp();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [source, setSource] = useState("");
   const [editing, setEditing] = useState("");
   const [form, setForm] = useState<Record<string, unknown>>({ name: "", year: new Date().getFullYear(), start_date: "", end_date: "", status: "draft", description: "", copy_divisions: true, copy_requirements: true, copy_leaders: true, copy_supervisors: true, copy_assignments: false });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== "admin") router.replace("/dashboard");
+  }, [user, router]);
+
+  if (user?.role !== "admin") return null;
 
   const periodPayload = () => ({
     name: String(form.name || "").trim(),

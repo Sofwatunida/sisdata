@@ -10,7 +10,7 @@ import type { Assignment, Division, MasterData } from "@/lib/types";
 import { divisionStats, formatNumber } from "@/lib/utils";
 
 export default function DivisionsPage() {
-  const { activePeriodId, periods, bidangs, refresh } = useApp();
+  const { user, activePeriodId, periods, bidangs, refresh } = useApp();
   const [divisions, setDivisions] = useState<Division[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [master, setMaster] = useState<MasterData[]>([]);
@@ -67,8 +67,8 @@ export default function DivisionsPage() {
 
   return (
     <div>
-      <PageHeader title="Bagian / Divisi" description={`Kelola struktur bagian periode ${period?.name || "-"}`}
-        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=needs&format=xlsx&period_id=${activePeriodId}`}>Export kebutuhan</button><button className="btn-primary" onClick={() => openForm()}><Plus className="h-4 w-4" /> Tambah Bagian</button></>} />
+      <PageHeader title="Divisi" description={`Kelola struktur bagian periode ${period?.name || "-"}`}
+        actions={<><button className="btn-secondary" onClick={() => window.location.href = `/api/export?type=needs&format=xlsx&period_id=${activePeriodId}`}>Export kebutuhan</button>{user?.role === "admin" && <button className="btn-primary" onClick={() => openForm()}><Plus className="h-4 w-4" /> Tambah Divisi</button>}</>} />
 
       <div className="card overflow-hidden">
         <div className="grid gap-3 border-b border-slate-100 p-4 md:grid-cols-[1fr_240px]">
@@ -137,7 +137,7 @@ export default function DivisionsPage() {
         )}
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Edit Bagian · ${editing.code}` : "Tambah Bagian / Divisi"}>
+      <Modal open={open} onClose={() => setOpen(false)} title={editing ? `Edit Bagian · ${editing.code}` : "Tambah Divisi"}>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Nama bagian *"><input className="input" value={String(form.name || "")} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
           <Field label="Kode bagian"><input className="input" value={String(form.code || "")} onChange={(e) => setForm({ ...form, code: e.target.value })} placeholder="Otomatis" /></Field>

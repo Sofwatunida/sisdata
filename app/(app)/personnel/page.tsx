@@ -256,7 +256,7 @@ export default function PersonnelPage() {
         footer={<div className="flex gap-2"><button className="btn-secondary flex-1" onClick={resetFilters}>Reset</button><button className="btn-primary flex-1" onClick={() => setFilterOpen(false)}>Terapkan</button></div>}
       >
         <div className="space-y-4">
-          <label className="block"><span className="label">Bagian / divisi</span>
+          <label className="block"><span className="label">Divisi</span>
             <select className="input" value={division} onChange={(e) => setDivision(e.target.value)}>
               <option value="">Semua bagian</option>{divisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
             </select>

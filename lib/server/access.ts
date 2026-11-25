@@ -71,6 +71,7 @@ export async function canAccessDivision(session: Session, divisionId: string, ac
 
 export const ADMIN_ONLY_READ_RESOURCES = ["profiles", "operator_permissions", "backups"];
 export const ADMIN_ONLY_RESOURCES = ["profiles", "operator_permissions", "backups", "periods"];
+export const OPERATOR_CREATABLE_RESOURCES = ["personnel", "assignments"];
 
 export const RESOURCE_TABLE = {
   periods: "periods",

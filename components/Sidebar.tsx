@@ -13,10 +13,10 @@ import { useApp } from "@/components/AppContext";
 const items = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/personnel", label: "Data Personil", icon: Users },
-  { href: "/bidangs", label: "Bidang & Divisi", icon: Layers3 },
-  { href: "/divisions", label: "Bagian / Divisi", icon: Boxes },
+  { href: "/bidangs", label: "Bidang", icon: Layers3 },
+  { href: "/divisions", label: "Divisi", icon: Boxes },
   { href: "/search", label: "Pencarian Global", icon: Search },
-  { href: "/periods", label: "Periode / Acara", icon: CalendarRange },
+  { href: "/periods", label: "Periode / Acara", icon: CalendarRange, admin: true },
   { href: "/supervision", label: "Data Pengawasan", icon: ShieldCheck },
   { href: "/reports", label: "Rekapitulasi", icon: BarChart3 },
   { href: "/import-export", label: "Import & Export", icon: Download },

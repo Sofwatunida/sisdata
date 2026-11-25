@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { all, insert, nextCode, uid } from "@/lib/server/db";
 import { can, getSession, logActivity } from "@/lib/server/auth";
-import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, canAccessBidang, isResource, scopedBidangIds, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
+import { ADMIN_ONLY_READ_RESOURCES, ADMIN_ONLY_RESOURCES, OPERATOR_CREATABLE_RESOURCES, canAccessBidang, isResource, scopedBidangIds, scopedDivisionIds, RESOURCE_TABLE } from "@/lib/server/access";
 import { apiError, fail, ok } from "@/lib/server/http";
 import type { Bidang, Division, Personnel } from "@/lib/types";
 import { divisionNameKey, normalizeDivisionName } from "@/lib/utils";
@@ -61,6 +61,7 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ resource: 
     const { resource } = await ctx.params;
     if (!isResource(resource)) return fail("Resource tidak dikenal", 404);
     if ((ADMIN_ONLY_RESOURCES.includes(resource) || resource === "settings") && session.role !== "admin") throw new Error("FORBIDDEN");
+    if (session.role !== "admin" && !OPERATOR_CREATABLE_RESOURCES.includes(resource)) throw new Error("FORBIDDEN");
     if (resource === "activity_logs" || resource === "import_rows" || resource === "import_batches") throw new Error("FORBIDDEN");
     if (resource === "profiles") throw new Error("Gunakan halaman Manajemen Akun");
 
